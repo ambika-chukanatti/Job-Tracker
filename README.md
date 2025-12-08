@@ -75,5 +75,5 @@ npm run client
 
 ## License
 
-[![MIT License](https://img.shields.io/badge/License-Apache--2.0-orange.svg)](https://choosealicense.com/licenses/mit/)
+[![Apache-2.0 License](https://img.shields.io/badge/License-Apache--2.0-orange.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 

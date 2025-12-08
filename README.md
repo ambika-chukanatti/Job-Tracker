@@ -2,7 +2,7 @@
 
 A comprehensive full-stack MERN application designed to help users efficiently manage and track their job applications, interviews, and offers in one centralized location.
 
-**Checkout Live -** [Insert Live Demo Link Here]
+**Checkout Live -** [job-tracker-gilt.vercel.app](https://job-tracker-gilt.vercel.app/)
 
 ## Tech Stack
 
@@ -38,7 +38,7 @@ cd client
 npm install
 ```
 
-# Install server dependencies
+## Install server dependencies
 ```bash
 cd ../server
 npm install

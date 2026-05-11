@@ -1,143 +1,110 @@
 import { useState, useEffect } from "react";
 import { GoalEditModal } from "../components";
-const api_url = "https://job-tracker-ya9s.onrender.com/api"
-const token = sessionStorage.getItem("token")
+
+const api_url = "https://job-tracker-ya9s.onrender.com/api";
+
+const getAuthHeader = () => ({
+  "Content-Type": "application/json",
+  "Authorization": `Bearer ${sessionStorage.getItem("token")}`
+});
 
 const Profile = ({ location }) => {
   const [goal, setGoal] = useState(null);
   const [user, setUser] = useState(null);
-  const [isGoalModalOpen, setIsGoalModalOpen] = useState(false)
+  const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
 
-  const getGoal = async() => {
-    try{
+  const getGoal = async () => {
+    try {
       const response = await fetch(`${api_url}/target`, {
-          method: "GET",
-          headers: {
-              "Content-Type": "application/json",
-              "Authorization": token
-          }
+        method: "GET",
+        headers: getAuthHeader()  
       });
-  
+
       const data = await response.json();
-  
-      if (!response.ok) {
-          throw new Error(data.message || "Failed to verify user");
-      }
-
-      console.log("goal", data)
-
-      setGoal(data)
-    }catch(err){
-        console.error(err)
+      if (!response.ok) throw new Error(data.message || "Failed to fetch goal");
+      setGoal(data);
+    } catch (err) {
+      console.error(err);
     }
-  }
+  };
 
-  const getUser = async() => {
-    try{
+  const getUser = async () => {
+    try {
       const response = await fetch(`${api_url}/user`, {
-          method: "GET",
-          headers: {
-              "Content-Type": "application/json",
-              "Authorization": token
-          }
+        method: "GET",
+        headers: getAuthHeader()  
       });
-  
+
       const data = await response.json();
-  
-      if (!response.ok) {
-          throw new Error(data.message || "Failed to verify user");
-      }
-
-      console.log("user", data)
-
-      setUser(data)
-    }catch(err){
-        console.error(err)
+      if (!response.ok) throw new Error(data.message || "Failed to fetch user");
+      setUser(data);
+    } catch (err) {
+      console.error(err);
     }
-  }
+  };
 
-  useEffect(()=>{
-    getGoal()
-    getUser()
-  },[])
+  useEffect(() => {
+    getGoal();
+    getUser();
+  }, []);
 
   const handleUserChange = (e) => {
     setUser({ ...user, [e.target.name]: e.target.value });
   };
 
-  const handleSaveGoal = async(formData) => {
-    try{
+  const handleSaveGoal = async (formData) => {
+    try {
       const response = await fetch(`${api_url}/target`, {
-          method: "PUT",
-          headers: {
-              "Content-Type": "application/json",
-              "Authorization": token
-          },
-          body: JSON.stringify(formData)
+        method: "PUT",
+        headers: getAuthHeader(),  
+        body: JSON.stringify(formData)
       });
-  
+
       const data = await response.json();
-  
-      if (!response.ok) {
-          throw new Error(data.message || "Failed to update goal");
-      }
-
-      console.log("goal", data)
-
-      setGoal(data.target)
-    }catch(err){
-        console.error(err)
+      if (!response.ok) throw new Error(data.message || "Failed to update goal");
+      setGoal(data.target);
+      setIsGoalModalOpen(false);  
+    } catch (err) {
+      console.error(err);
     }
-  }
+  };
 
-  const handleDeleteUser = async() => {
-    try{
+  const handleDeleteUser = async () => {
+    if (!window.confirm("Are you sure you want to delete your account? This cannot be undone.")) return;  // ✅ safety confirmation
+    try {
       const response = await fetch(`${api_url}/user`, {
-          method: "DELETE",
-          headers: {
-              "Content-Type": "application/json",
-              "Authorization": token
-          }
+        method: "DELETE",
+        headers: getAuthHeader() 
       });
-  
+
       const data = await response.json();
-  
-      if (!response.ok) {
-          throw new Error(data.message || "Failed to verify user");
-      }
+      if (!response.ok) throw new Error(data.message || "Failed to delete user");
 
-      console.log(data.message)
-
-      setUser(null)
-    }catch(err){
-        console.error(err)
+      sessionStorage.removeItem("token");  
+      setUser(null);
+      window.location.href = "/";  
+    } catch (err) {
+      console.error(err);
     }
-  }
+  };
 
-  const handleSaveUser = async() => {
-    try{
+  const handleSaveUser = async () => {
+    try {
       const response = await fetch(`${api_url}/user`, {
-          method: "PUT",
-          headers: {
-              "Content-Type": "application/json",
-              "Authorization": token
-          },
-          body: JSON.stringify(user)
+        method: "PUT",
+        headers: getAuthHeader(),  
+        body: JSON.stringify(user)
       });
-  
+
       const data = await response.json();
-  
-      if (!response.ok) {
-          throw new Error(data.message || "Failed to verify user");
-      }
+      if (!response.ok) throw new Error(data.message || "Failed to update user");
 
-      alert("User details updated")
-
-      setUser(data)
-    }catch(err){
-        console.error(err)
+      alert("User details updated");
+      setUser(data);
+    } catch (err) {
+      console.error(err);
     }
-  }
+  };
 
   return (
     <div className="w-full flex justify-center bg-gray-100 p-6">
@@ -147,7 +114,7 @@ const Profile = ({ location }) => {
           className="w-7/12 cursor-pointer border border-gray-300 text-white p-6 rounded-xl shadow-lg transform transition-all duration-200"
         >
           <h2 className="text-3xl font-bold mb-4 tracking-wide text-center">Next Career Goal</h2>
-          
+
           <div className="bg-white text-gray-900 p-6 rounded-lg">
             <table className="w-full border-collapse">
               <thead>
@@ -179,7 +146,7 @@ const Profile = ({ location }) => {
               <input
                 type="text"
                 name="username"
-                value={user?.username}
+                value={user?.username || ""}  
                 onChange={handleUserChange}
                 className="w-full border border-gray-300 p-2 rounded"
                 placeholder="Enter username"
@@ -191,7 +158,7 @@ const Profile = ({ location }) => {
               <input
                 type="email"
                 name="email"
-                value={user?.email}
+                value={user?.email || ""}  
                 onChange={handleUserChange}
                 className="w-full border border-gray-300 p-2 rounded"
                 placeholder="Enter email"
@@ -199,14 +166,14 @@ const Profile = ({ location }) => {
             </div>
 
             <div className="flex justify-end mt-4">
-              <button 
-                className="cursor-pointer mr-4 transition-200 bg-red-400 text-white px-4 py-2 rounded hover:bg-red-600"
+              <button
+                className="cursor-pointer mr-4 bg-red-400 text-white px-4 py-2 rounded hover:bg-red-600"
                 onClick={handleDeleteUser}
               >
                 Delete User
               </button>
-              <button 
-                className="cursor-pointer transtion-200 bg-blue-400 text-white px-4 py-2 rounded hover:bg-blue-600"
+              <button
+                className="cursor-pointer bg-blue-400 text-white px-4 py-2 rounded hover:bg-blue-600"
                 onClick={handleSaveUser}
               >
                 Save
@@ -215,6 +182,7 @@ const Profile = ({ location }) => {
           </div>
         </div>
       </div>
+
       <GoalEditModal
         isOpen={isGoalModalOpen}
         onClose={() => setIsGoalModalOpen(false)}

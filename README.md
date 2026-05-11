@@ -1,4 +1,4 @@
-# 💼 Job Tracker: Full-Stack Application Manager
+# 💼 Job Tracker: Full-Stack Job Application Manager
 
 A comprehensive full-stack MERN application designed to help users efficiently manage and track their job applications, interviews, and offers in one centralized location.
 

@@ -1,19 +1,22 @@
 import jwt from "jsonwebtoken";
 import { User } from '../models/association.js';
 
-
 const auth = async (req, res, next) => {
     try {
-        const token = req.header("Authorization");
+        const authHeader = req.header("Authorization");
+        console.log("=== AUTH HEADER ===", authHeader);
 
-        console.log(token)
-
-        if (!token) {
+        if (!authHeader) {
             return res.status(401).json({ message: "Access denied. No token provided." });
         }
 
-        const decoded = jwt.verify(token, process.env.SECRET_KEY); 
-        console.log("decoded",decoded)
+        const token = authHeader.startsWith("Bearer ")
+            ? authHeader.slice(7)
+            : authHeader;
+
+        console.log("=== TOKEN ===", token);
+
+        const decoded = jwt.verify(token, process.env.SECRET_KEY);
 
         if (!decoded || !decoded.userId) {
             return res.status(401).json({ message: "Invalid token." });
@@ -21,14 +24,12 @@ const auth = async (req, res, next) => {
 
         req.userId = decoded.userId;
 
-        const user = await User.findByPk(decoded.userId); 
-
+        const user = await User.findByPk(decoded.userId);
         if (!user) {
             return res.status(404).json({ message: "User not found." });
         }
 
-        req.user = user; 
-       
+        req.user = user;
         next();
     } catch (err) {
         console.error("JWT Verification Error:", err);

@@ -2,59 +2,83 @@ import { useState } from 'react';
 import { CompanyEditModal } from "../components";
 
 const CompanyDetailsModal = ({ ci, company, isOpen, onClose, onDelete, onSave }) => {
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
   if (!isOpen || !company) return null;
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+
+  const initials = company.company_name
+    .split(" ")
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+  const fields = [
+    { label: "Industry", value: company.industry },
+    { label: "Size",     value: company.company_size ? `${company.company_size} employees` : null },
+    { label: "Type",     value: company.company_type },
+    { label: "Location", value: company.location },
+    { label: "Founded",  value: company.year_founded },
+  ];
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
-      <div className="bg-white py-6 px-8 rounded-lg shadow-xl w-[600px]">
-        <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">
-          {company.company_name}
-        </h2>
+    <>
+      <div className="fixed inset-0 bg-black/25 flex justify-center items-center z-50">
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm w-[480px]">
 
-        <table className="w-full border-collapse border border-gray-300 rounded-lg overflow-hidden">
-          <tbody>
-            <tr className="border-b">
-              <td className="p-3 font-semibold border-r border-gray-300 bg-gray-100">Industry</td>
-              <td className="p-3">{company.industry}</td>
-            </tr>
-            <tr className="border-b">
-              <td className="p-3 font-semibold border-r border-gray-300 bg-gray-100">Size</td>
-              <td className="p-3">{company.company_size} employees</td>
-            </tr>
-            <tr className="border-b">
-              <td className="p-3 font-semibold border-r border-gray-300 bg-gray-100">Type</td>
-              <td className="p-3">{company.company_type}</td>
-            </tr>
-            <tr className="border-b">
-              <td className="p-3 font-semibold border-r border-gray-300 bg-gray-100">Location</td>
-              <td className="p-3">{company.location}</td>
-            </tr>
-            <tr className="border-b">
-              <td className="p-3 font-semibold border-r border-gray-300 bg-gray-100">Website</td>
-              <td className="p-3">
-                <a href={company.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
-                  {company.website}
-                </a>
-              </td>
-            </tr>
-            <tr>
-              <td className="p-3 font-semibold border-r border-gray-300 bg-gray-100">Founded</td>
-              <td className="p-3">{company.year_founded}</td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div className="flex justify-between mt-6">
-          <button onClick={onClose} className="px-5 py-2 cursor-pointer bg-gray-200 rounded hover:bg-gray-300 transition-200">
-            Close
-          </button>
-          <div className="flex gap-2">
-            <button onClick={() => setIsEditModalOpen(true)} className="px-5 py-2 cursor-pointer bg-gray-200 rounded hover:bg-gray-300 transition-200">
-              Edit
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-500 shrink-0">
+                {initials}
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-900">{company.company_name}</p>
+                {company.website && (
+                  <a
+                    href={company.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-blue-400 hover:underline"
+                  >
+                    {company.website}
+                  </a>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="text-gray-300 hover:text-gray-500 transition-colors cursor-pointer"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
-            <button onClick={() => onDelete(company.id, ci)} className="px-5 py-2 cursor-pointer bg-red-500 text-white rounded hover:bg-red-600 transition-200">
+          </div>
+
+          {/* Fields */}
+          <div className="px-6 py-4 grid grid-cols-2 gap-x-8 gap-y-4">
+            {fields.map(({ label, value }) => (
+              <div key={label}>
+                <p className="text-xs text-gray-400 mb-0.5">{label}</p>
+                <p className="text-sm text-gray-700">{value || "—"}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
+            <button
+              onClick={() => onDelete(company.id, ci)}
+              className="text-xs text-red-400 hover:text-red-600 px-3 py-1.5 border border-red-100 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+            >
               Delete
+            </button>
+            <button
+              onClick={() => setIsEditModalOpen(true)}
+              className="text-sm font-medium bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors cursor-pointer"
+            >
+              Edit
             </button>
           </div>
         </div>
@@ -68,7 +92,7 @@ const CompanyDetailsModal = ({ ci, company, isOpen, onClose, onDelete, onSave })
         onClose={() => setIsEditModalOpen(false)}
         onSave={onSave}
       />
-    </div>
+    </>
   );
 };
 

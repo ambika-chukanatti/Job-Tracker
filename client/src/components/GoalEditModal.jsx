@@ -1,18 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+const newGoal = {
+  goal: "",
+  deadline: "",
+  salary_min: 0,
+  salary_max: 0,
+};
+
+const inputClass = "w-full text-sm px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-300 placeholder-gray-300 bg-white";
+const labelClass = "block text-xs text-gray-400 mb-1.5";
 
 const GoalEditModal = ({ goal, onSave, onClose, isOpen }) => {
-  if (!isOpen) return null;
+  const [formData, setFormData] = useState(goal ?? newGoal);
 
-  const newGoal = {
-    goal: "",
-    deadline: "",
-    salary_min: 0,
-    salary_max: 0,
-  };
+  useEffect(() => {
+    setFormData(goal ?? newGoal);
+  }, [goal]);
 
-  const [formData, setFormData] = useState(goal ? goal : newGoal);
-
-  const handleGoalChange = (e) => {
+  const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -21,75 +26,93 @@ const GoalEditModal = ({ goal, onSave, onClose, isOpen }) => {
     onClose();
   };
 
-  return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm transition-opacity duration-300">
-      <div className="bg-white w-[500px] p-8 rounded-lg shadow-2xl transform scale-100 transition-transform duration-300">
-        <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
-          Next Career Goal
-        </h2>
+  if (!isOpen) return null;
 
-        <div className="space-y-4">
+  return (
+    <div className="fixed inset-0 bg-black/25 flex justify-center items-center z-50">
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm w-[440px]">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div>
-            <label className="block font-medium text-gray-700">Target Title</label>
+            <h2 className="text-sm font-medium text-gray-900">Career goal</h2>
+            <p className="text-xs text-gray-400 mt-0.5">Set your next target</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-300 hover:text-gray-500 transition-colors cursor-pointer"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 py-5 space-y-4">
+          <div>
+            <label className={labelClass}>Target title</label>
             <input
               type="text"
               name="goal"
-              value={formData?.goal}
-              onChange={handleGoalChange}
-              className="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter job title"
+              value={formData.goal || ""}
+              onChange={handleChange}
+              placeholder="e.g. Senior Frontend Engineer"
+              className={inputClass}
             />
           </div>
 
           <div>
-            <label className="block font-medium text-gray-700">Target Date</label>
+            <label className={labelClass}>Target date</label>
             <input
               type="date"
               name="deadline"
-              value={formData?.deadline}
-              onChange={handleGoalChange}
-              className="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-blue-500"
+              value={formData.deadline || ""}
+              onChange={handleChange}
+              className={inputClass}
             />
           </div>
 
-          <div className="flex gap-4">
-            <div className="w-1/2">
-              <label className="block font-medium text-gray-700">Min Salary ($)</label>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Min salary ($)</label>
               <input
                 type="number"
                 name="salary_min"
-                value={formData?.salary_min}
-                onChange={handleGoalChange}
-                className="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-blue-500"
+                value={formData.salary_min || ""}
+                onChange={handleChange}
+                placeholder="e.g. 80000"
+                className={inputClass}
               />
             </div>
-
-            <div className="w-1/2">
-              <label className="block font-medium text-gray-700">Max Salary ($)</label>
+            <div>
+              <label className={labelClass}>Max salary ($)</label>
               <input
                 type="number"
                 name="salary_max"
-                value={formData?.salary_max}
-                onChange={handleGoalChange}
-                className="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-blue-500"
+                value={formData.salary_max || ""}
+                onChange={handleChange}
+                placeholder="e.g. 120000"
+                className={inputClass}
               />
             </div>
           </div>
+        </div>
 
-          <div className="flex justify-end mt-8 space-x-4">
-            <button
-              className="px-4 py-2 mr-4 rounded cursor-pointer bg-gray-300 text-gray-800 font-medium hover:bg-gray-400 transition-all"
-              onClick={onClose}
-            >
-              Cancel
-            </button>
-            <button
-              className="px-4 py-2 rounded cursor-pointer bg-blue-500 text-white font-medium hover:bg-blue-700 transition-all"
-              onClick={handleSubmit}
-            >
-              Save
-            </button>
-          </div>
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-100">
+          <button
+            onClick={onClose}
+            className="text-sm text-gray-500 hover:text-gray-700 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            className="text-sm font-medium bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors cursor-pointer"
+          >
+            Save
+          </button>
         </div>
       </div>
     </div>

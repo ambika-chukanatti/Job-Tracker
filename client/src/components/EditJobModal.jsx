@@ -15,18 +15,21 @@ const EditJobModal = ({ ji, job, isOpen, onClose, onSave, companies, isEdit }) =
     date_applied: null,
     follow_up: null,
     company_id: 0,
-
   };
 
   const [formData, setFormData] = useState(isEdit && job ? job : newJob);
+  const dateFields = ["deadline", "date_applied", "follow_up"];
 
   useEffect(() => {
     setFormData(isEdit && job ? job : newJob);
   }, [isEdit, job]);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    console.log(formData)
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: dateFields.includes(name) && value === "" ? null : value,
+    });
   };
 
   const handleFileChange = (e) => {
@@ -40,188 +43,219 @@ const EditJobModal = ({ ji, job, isOpen, onClose, onSave, companies, isEdit }) =
 
   if (!isOpen) return null;
 
+  const inputClass = "w-full text-sm px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-300 placeholder-gray-300 bg-white";
+  const labelClass = "block text-xs text-gray-400 mb-1.5";
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center animate-fadeIn">
-      <div className="bg-white p-6 rounded-lg h-11/12 overflow-y-auto shadow-lg w-[850px] transition-all">
-        <h2 className="text-xl font-semibold mb-4 text-center">
-          {isEdit ? "Edit" : "Add New"} Job
-        </h2>
+    <div className="fixed inset-0 bg-black/25 flex justify-center items-center z-50">
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm w-[680px] max-h-[90vh] overflow-y-auto">
 
-        {/* Single-row fields */}
-        <div className="flex flex-col gap-4">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div>
-            <label className="block text-gray-400">Job Title</label>
-            <input
-              type="text"
-              name="job_title"
-              value={formData.job_title || ""}
-              onChange={handleChange}
-              className="border border-gray-300 p-2 rounded w-full"
-              placeholder="Enter Job Title"
-            />
+            <h2 className="text-sm font-medium text-gray-900">
+              {isEdit ? "Edit job" : "Add new job"}
+            </h2>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {isEdit ? "Update the details below" : "Fill in the details below"}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-300 hover:text-gray-500 transition-colors cursor-pointer"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 py-5 space-y-4">
+
+          {/* Row 1 */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Job title</label>
+              <input
+                type="text"
+                name="job_title"
+                value={formData.job_title || ""}
+                onChange={handleChange}
+                placeholder="e.g. Frontend Engineer"
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Job URL</label>
+              <input
+                type="text"
+                name="job_url"
+                value={formData.job_url || ""}
+                onChange={handleChange}
+                placeholder="https://..."
+                className={inputClass}
+              />
+            </div>
           </div>
 
-          <div>
-            <label className="block text-gray-400">Job URL</label>
-            <input
-              type="text"
-              name="job_url"
-              value={formData.job_url || ""}
-              onChange={handleChange}
-              className="border border-gray-300 p-2 rounded w-full"
-              placeholder="Enter Job URL"
-            />
+          {/* Row 2 */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Company</label>
+              <select
+                name="company_name"
+                value={formData.company_name || ""}
+                onChange={(e) => {
+                  const selectedOption = e.target.options[e.target.selectedIndex];
+                  setFormData({
+                    ...formData,
+                    company_name: e.target.value,
+                    company_id: selectedOption.getAttribute("data-id"),
+                  });
+                }}
+                className={inputClass}
+              >
+                <option value="">Select company</option>
+                {companies.map((company) => (
+                  <option key={company.id} value={company.company_name} data-id={company.id}>
+                    {company.company_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={labelClass}>Location</label>
+              <input
+                type="text"
+                name="location"
+                value={formData.location || ""}
+                onChange={handleChange}
+                placeholder="e.g. Remote, New York"
+                className={inputClass}
+              />
+            </div>
           </div>
 
-          <div>
-            <label className="block text-gray-400">Company Name</label>
-            <select
-              name="company_name"
-              value={formData.company_name || ""}
-              onChange={e => {
-                const selectedIndex = e.target.selectedIndex;
-                const selectedOption = e.target.options[selectedIndex];
-
-                setFormData({
-                  ...formData,
-                  company_name: e.target.value,
-                  company_id: selectedOption.getAttribute("data-id"),
-                });
-
-                console.log(formData)
-              }}
-              className="border border-gray-300 p-2 rounded w-full"
-            >
-              <option value="">Select Company</option>
-              {companies.map((company) => (
-                <option key={company.id} value={company.company_name} data-id={company.id}>
-                  {company.company_name}
-                </option>
-              ))}
-            </select>
+          {/* Row 3 */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Salary</label>
+              <input
+                type="text"
+                name="salary"
+                value={formData.salary || ""}
+                onChange={handleChange}
+                placeholder="e.g. 120000"
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Status</label>
+              <select
+                name="status"
+                value={formData.status || ""}
+                onChange={handleChange}
+                className={inputClass}
+              >
+                <option value="">Select status</option>
+                <option value="Bookmarked">Bookmarked</option>
+                <option value="Applied">Applied</option>
+                <option value="Interviewing">Interviewing</option>
+                <option value="Negotiating">Negotiating</option>
+                <option value="Accepted">Accepted</option>
+                <option value="I Withdrew">I Withdrew</option>
+                <option value="Not Selected">Not Selected</option>
+                <option value="No Response">No Response</option>
+              </select>
+            </div>
           </div>
 
-          <div>
-            <label className="block text-gray-400">Location</label>
-            <input
-              type="text"
-              name="location"
-              value={formData.location || ""}
-              onChange={handleChange}
-              className="border border-gray-400 p-2 rounded w-full"
-              placeholder="Enter Location"
-            />
+          {/* Row 4 — dates */}
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className={labelClass}>Deadline</label>
+              <input
+                type="date"
+                name="deadline"
+                value={formData.deadline || ""}
+                onChange={handleChange}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Date applied</label>
+              <input
+                type="date"
+                name="date_applied"
+                value={formData.date_applied || ""}
+                onChange={handleChange}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Follow-up</label>
+              <input
+                type="date"
+                name="follow_up"
+                value={formData.follow_up || ""}
+                onChange={handleChange}
+                className={inputClass}
+              />
+            </div>
           </div>
 
+          {/* Description */}
           <div>
-            <label className="block text-gray-400">Job Description</label>
+            <label className={labelClass}>Job description</label>
             <textarea
               name="job_description"
               value={formData.job_description || ""}
               onChange={handleChange}
-              className="border border-gray-300 p-2 rounded w-full h-30"
-              placeholder="Enter Job Description"
+              placeholder="Paste the job description here..."
+              rows={4}
+              className={`${inputClass} resize-none`}
             />
           </div>
-        </div>
 
-        <div className="grid grid-cols-2 gap-4 mt-4">
+          {/* Notes */}
           <div>
-            <label className="block text-gray-400">Salary</label>
-            <input
-              type="text"
-              name="salary"
-              value={formData.salary || ""}
+            <label className={labelClass}>Notes</label>
+            <textarea
+              name="notes"
+              value={formData.notes || ""}
               onChange={handleChange}
-              className="border border-gray-400 p-2 rounded w-full"
-              placeholder="Enter Max Salary"
+              placeholder="Any personal notes..."
+              rows={3}
+              className={`${inputClass} resize-none`}
             />
           </div>
+
+          {/* Resume */}
           <div>
-            <label className="block text-gray-400">Resume Upload</label>
+            <label className={labelClass}>Resume</label>
             <input
               type="file"
               name="resume"
               onChange={handleFileChange}
-              className="border border-gray-400 p-2 rounded w-full"
-            />
-          </div>
-          <div>
-            <label className="block text-gray-400">Status</label>
-            <select
-              name="status"
-              value={formData.status || ""}
-              onChange={handleChange}
-              className="border border-gray-400 p-2 rounded w-full bg-white"
-            >
-              <option value="">Select Status</option>
-              <option value="Bookmarked">Bookmarked</option>
-              <option value="Applied">Applied</option>
-              <option value="Interviewing">Interviewing</option>
-              <option value="Negotiating">Negotiating</option>
-              <option value="Accepted">Accepted</option>
-              <option value="I Withdrew">I Withdrew</option>
-              <option value="Not Selected">Not Selected</option>
-              <option value="No Response">No Response</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-gray-400">Deadline</label>
-            <input
-              type="date"
-              name="deadline"
-              value={formData.deadline || ""}
-              onChange={handleChange}
-              className="border border-gray-400 p-2 rounded w-full"
-            />
-          </div>
-          <div>
-            <label className="block text-gray-400">Applied Date</label>
-            <input
-              type="date"
-              name="date_applied"
-              value={formData.date_applied || ""}
-              onChange={handleChange}
-              className="border border-gray-400 p-2 rounded w-full"
-            />
-          </div>
-
-          <div>
-            <label className="block text-gray-400">Follow-Up Date</label>
-            <input
-              type="date"
-              name="follow_up"
-              value={formData.follow_up || ""}
-              onChange={handleChange}
-              className="border border-gray-300 p-2 rounded w-full"
+              className="w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border file:border-gray-200 file:text-xs file:text-gray-600 file:bg-white hover:file:bg-gray-50 file:cursor-pointer"
             />
           </div>
         </div>
 
-        <div className="mt-4">
-          <label className="block text-gray-400">Notes</label>
-          <textarea
-            name="notes"
-            value={formData.notes || ""}
-            onChange={handleChange}
-            className="border border-gray-300 p-2 rounded w-full h-20"
-            placeholder="Enter Notes"
-          />
-        </div>
-
-        <div className="flex justify-end gap-2 mt-6">
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-100">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-gray-200 rounded cursor-pointer hover:bg-gray-300 transition-all duration-200"
+            className="text-sm text-gray-500 hover:text-gray-700 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
-            className="px-4 py-2 bg-blue-600 text-white cursor-pointer rounded hover:bg-blue-700 transition-all duration-200"
+            className="text-sm font-medium bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors cursor-pointer"
           >
-            Save
+            {isEdit ? "Save changes" : "Add job"}
           </button>
         </div>
       </div>

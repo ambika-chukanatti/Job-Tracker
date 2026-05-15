@@ -53,8 +53,6 @@ const scheduleEmail = (email, type, jobTitle, companyName, date) => {
   try{
     if (!date) return; 
 
-    //console.log(email, type, jobTitle, companyName, date)
-
     const formattedDate = new Date(date);
     const emailText = getEmailTemplate(type, jobTitle, companyName, formattedDate.toDateString());
 
@@ -207,14 +205,14 @@ export const updateJob = async (req, res) => {
 
     console.log(req.body)
 
-    const { id, job_title, job_url, company_name, location, salary, job_description, status, notes, resume, deadline, follow_up } = req.body;
+    const { id, job_title, job_url, company_name, location, salary, job_description, status, notes, resume, deadline, date_applied, follow_up } = req.body;
 
     const job = await Job.findByPk(id);
     if (!job) {
       return res.status(404).json({ message: "Job not found." });
     }
 
-    await job.update({ job_title, job_url, company_name, location, salary, job_description, status, notes, resume, deadline, follow_up });
+    await job.update({ job_title, job_url, company_name, location, salary, job_description, status, notes, resume, deadline, date_applied, follow_up });
 
     if (deadline) {
       const dayBeforeDeadline = new Date(deadline);

@@ -1,46 +1,54 @@
 import { useNavigate } from "react-router-dom";
 
+const statusColors = {
+  Bookmarked:     "bg-gray-100 text-gray-600",
+  Applied:        "bg-blue-50 text-blue-600",
+  "No Response":  "bg-yellow-50 text-yellow-600",
+  "Not Selected": "bg-red-50 text-red-500",
+  "I Withdrew":   "bg-orange-50 text-orange-500",
+  Interviewing:   "bg-purple-50 text-purple-600",
+  Negotiating:    "bg-teal-50 text-teal-600",
+  Accepted:       "bg-green-50 text-green-600",
+};
+
 const JobRow = ({ i, job, onEdit, onDelete }) => {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   return (
-    <>
-      <tr className="border-b border-gray-300 text-center cursor-pointer" onClick={() => { navigate(`/job/${job?.id}`)}}>
-        <td className="p-3 border border-gray-300">{i}</td>
-        <td className="p-3 border border-gray-300">{job.job_title}</td>
-        <td className="p-3 border border-gray-300">{job.company_name}</td>
-        <td className="p-3 border border-gray-300">{job.salary}</td>
-        <td className="p-3 border border-gray-300">{job.location}</td>
-        <td className={`p-3 border border-gray-300 font-semibold ${job.status === "Accepted" ? "text-green-500" : "text-gray-500"}`}>
+    <tr
+      className="hover:bg-gray-50 transition-colors cursor-pointer"
+      onClick={() => navigate(`/job/${job?.id}`)}
+    >
+      <td className="px-4 py-3 text-xs text-gray-400">{i}</td>
+      <td className="px-4 py-3 text-sm font-medium text-gray-800">{job.job_title}</td>
+      <td className="px-4 py-3 text-sm text-gray-600">{job.company_name}</td>
+      <td className="px-4 py-3 text-sm text-gray-600">{job.salary || "—"}</td>
+      <td className="px-4 py-3 text-sm text-gray-600">{job.location || "—"}</td>
+      <td className="px-4 py-3">
+        <span className={`inline-block text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[job.status] || "bg-gray-100 text-gray-500"}`}>
           {job.status}
-        </td>
-        <td className="p-3 border border-gray-300">{job.deadline}</td>
-        <td className="p-3 border border-gray-300">{job.date_applied}</td>
-        <td className="p-3 border border-gray-300">
-          {job.follow_up}
-        </td>
-        <td colSpan="9" className="p-3 border border-gray-300 text-center">
+        </span>
+      </td>
+      <td className="px-4 py-3 text-sm text-gray-500">{job.deadline || "—"}</td>
+      <td className="px-4 py-3 text-sm text-gray-500">{job.date_applied || "—"}</td>
+      <td className="px-4 py-3 text-sm text-gray-500">{job.follow_up || "—"}</td>
+      <td className="px-4 py-3">
+        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
           <button
-            onClick={(event) => {
-              event.stopPropagation();
-              onEdit();
-            }}
-            className="px-3 py-2 mr-2 rounded-md cursor-pointer border border-gray-300 text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all duration-200 shadow-sm"
+            onClick={onEdit}
+            className="text-xs text-gray-600 hover:text-gray-900 px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
           >
             Edit
           </button>
           <button
-            onClick={(event) => {
-              event.stopPropagation();
-              onDelete();
-            }}
-            className="px-3 py-2 rounded-md cursor-pointer text-white bg-gray-800 hover:bg-gray-700 transition-all duration-200 shadow-sm"
+            onClick={onDelete}
+            className="text-xs text-red-400 hover:text-red-600 px-3 py-1.5 border border-red-100 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
           >
             Delete
           </button>
-        </td>
-      </tr>
-    </>
+        </div>
+      </td>
+    </tr>
   );
 };
 

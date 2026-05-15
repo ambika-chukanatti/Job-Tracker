@@ -1,17 +1,30 @@
 import { useState, useEffect } from "react";
 
-const CompanyEditModal = ({ ci, company, isOpen, onClose, onSave, isEdit }) => {
-  const newCompany = {
-    id: 0,
-    company_name: "",
-    industry: "",
-    company_size: "",
-    company_type: "",
-    location: "",
-    website: "",
-    year_founded: 0
-  };
+const fields = [
+  { key: "company_name",  label: "Company name",  type: "text"   },
+  { key: "industry",      label: "Industry",       type: "text"   },
+  { key: "company_size",  label: "Company size",   type: "number" },
+  { key: "company_type",  label: "Company type",   type: "text"   },
+  { key: "location",      label: "Location",       type: "text"   },
+  { key: "website",       label: "Website",        type: "text"   },
+  { key: "year_founded",  label: "Year founded",   type: "number" },
+];
 
+const newCompany = {
+  id: 0,
+  company_name: "",
+  industry: "",
+  company_size: "",
+  company_type: "",
+  location: "",
+  website: "",
+  year_founded: 0,
+};
+
+const inputClass = "w-full text-sm px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-300 placeholder-gray-300 bg-white";
+const labelClass = "block text-xs text-gray-400 mb-1.5";
+
+const CompanyEditModal = ({ ci, company, isOpen, onClose, onSave, isEdit }) => {
   const [formData, setFormData] = useState(isEdit && company ? company : newCompany);
 
   useEffect(() => {
@@ -31,46 +44,62 @@ const CompanyEditModal = ({ ci, company, isOpen, onClose, onSave, isEdit }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
-      <div className="bg-white py-6 h-10/12 overflow-y-auto px-8 rounded-lg shadow-xl w-[600px]">
-        <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">
-          {isEdit ? "Edit" : "Add New"} Company
-        </h2>
+    <div className="fixed inset-0 bg-black/25 flex justify-center items-center z-50">
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm w-[480px]">
 
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <div>
+            <h2 className="text-sm font-medium text-gray-900">
+              {isEdit ? "Edit company" : "Add company"}
+            </h2>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {isEdit ? "Update the details below" : "Fill in the details below"}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            type="button"
+            className="text-gray-300 hover:text-gray-500 transition-colors cursor-pointer"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Body */}
         <form onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            {Object.keys(newCompany).slice(1).map((key) => (
-              <div key={key}>
-                <label className="block font-semibold text-gray-400">
-                  {key.replace("_", " ").replace(/\b\w/g, (char) => char.toUpperCase())}
-                </label>
+          <div className="px-6 py-5 grid grid-cols-2 gap-4">
+            {fields.map(({ key, label, type }) => (
+              <div key={key} className={key === "company_name" ? "col-span-2" : ""}>
+                <label className={labelClass}>{label}</label>
                 <input
-                  type={key === "year_founded" || key === "company_size" ? "number" : "text"}
+                  type={type}
                   name={key}
                   value={formData[key] || ""}
                   onChange={handleChange}
-                  className="w-full p-2 border border-gray-300 rounded"
+                  className={inputClass}
                 />
               </div>
             ))}
           </div>
 
-          <div className="flex justify-end mt-6">
-            <div className="flex gap-4">
-              <button
-                onClick={onClose}
-                type="button"
-                className="px-4 py-2 bg-gray-200 rounded cursor-pointer hover:bg-gray-300 transition-all duration-200"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-blue-600 text-white cursor-pointer rounded hover:bg-blue-700 transition-all duration-200"
-              >
-                Save
-              </button>
-            </div>
+          {/* Footer */}
+          <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-100">
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-sm text-gray-500 hover:text-gray-700 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="text-sm font-medium bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors cursor-pointer"
+            >
+              {isEdit ? "Save changes" : "Add company"}
+            </button>
           </div>
         </form>
       </div>

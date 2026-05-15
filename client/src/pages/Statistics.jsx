@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useSearchParams, useLocation } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { Bar, Pie } from "react-chartjs-2";
 import "chart.js/auto";
 
@@ -17,32 +17,19 @@ const Statistics = () => {
   const [totalJobs, setTotalJobs] = useState(0);
   const [totalPieJobs, setTotalPieJobs] = useState(0);
 
-  const location = useLocation();
-
   let picker = searchParams.get("picker") || "year";
   let filter = searchParams.get("filter") || new Date().getFullYear();
 
   const updateParams = (key, value) => {
     const newParams = new URLSearchParams(searchParams);
-
-    if (value) {
-      newParams.set(key, value);
-    } else {
-      newParams.delete(key);
-    }
-
+    if (value) newParams.set(key, value);
+    else newParams.delete(key);
     if (key === "picker") {
-      if (value === "year") {
-        newParams.set("filter", 2025);
-      } else {
-        newParams.set("filter", "");
-      }
+      newParams.set("filter", value === "year" ? new Date().getFullYear() : "");
     }
-
     setSearchParams(newParams);
   };
 
-  
   useEffect(() => {
     generateBarChartData();
     generatePieChartData();
@@ -51,144 +38,174 @@ const Statistics = () => {
   const getBarChartData = async () => {
     const query = new URLSearchParams({ picker, filter }).toString();
     try {
-      const response = await fetch(`${api_url}/chart/bar?${query}`, {
-        method: "GET",
-        headers: getAuthHeader()  
-      });
-
+      const response = await fetch(`${api_url}/chart/bar?${query}`, { method: "GET", headers: getAuthHeader() });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Failed to get bar chart data");
       return data;
-    } catch (err) {
-      console.error(err);
-      return [];  
-    }
+    } catch (err) { console.error(err); return []; }
   };
 
   const getPiechartData = async () => {
     const query = new URLSearchParams({ picker, filter }).toString();
     try {
-      const response = await fetch(`${api_url}/chart/pie?${query}`, {
-        method: "GET",
-        headers: getAuthHeader()  
-      });
-
+      const response = await fetch(`${api_url}/chart/pie?${query}`, { method: "GET", headers: getAuthHeader() });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Failed to get pie chart data");
       return data;
-    } catch (err) {
-      console.error(err);
-      return [];  
-    }
+    } catch (err) { console.error(err); return []; }
   };
 
   const generateBarChartData = async () => {
     const labels = picker === "year"
       ? ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
       : Array.from({ length: 30 }, (_, i) => i + 1);
-
     const data = await getBarChartData();
-    if (!data?.length) return;  
-
+    if (!data?.length) return;
     setTotalJobs(data.reduce((sum, val) => sum + val, 0));
     setBarChartData({
       labels,
-      datasets: [{ data, backgroundColor: "#36a2eb" }],
+      datasets: [{
+        data,
+        backgroundColor: "rgb(17 24 39 / 0.08)",
+        borderColor: "rgb(17 24 39 / 0.7)",
+        borderWidth: 1,
+        borderRadius: 4,
+      }],
     });
   };
 
   const generatePieChartData = async () => {
     const categories = ["Saved", "Applied", "Pending", "Rejected", "Accepted"];
     const data = await getPiechartData();
-    if (!data?.length) return;  
-
+    if (!data?.length) return;
     setTotalPieJobs(data.reduce((sum, val) => sum + val, 0));
     setPieChartData({
       labels: categories,
       datasets: [{
         data,
-        backgroundColor: ["#ff6384", "#36a2eb", "#ffce56", "#4bc0c0", "#9966ff"]
+        backgroundColor: [
+          "rgb(209 213 219)",   // gray   — Saved
+          "rgb(191 219 254)",   // blue   — Applied
+          "rgb(254 240 138)",   // yellow — Pending
+          "rgb(254 202 202)",   // red    — Rejected
+          "rgb(187 247 208)",   // green  — Accepted
+        ],
+        borderWidth: 0,
       }],
     });
   };
 
+  const chartOptions = {
+    plugins: {
+      legend: { display: false },
+      tooltip: { enabled: true },
+    },
+    scales: {
+      x: { grid: { display: false }, border: { display: false }, ticks: { color: "#9ca3af", font: { size: 11 } } },
+      y: { grid: { color: "rgb(243 244 246)" }, border: { display: false }, ticks: { color: "#9ca3af", font: { size: 11 } } },
+    },
+  };
+
+  const pieOptions = {
+    plugins: {
+      legend: { display: false },
+      tooltip: { enabled: true },
+    },
+  };
+
+  const pieCategories = [
+    { label: "Saved",    color: "bg-gray-200"   },
+    { label: "Applied",  color: "bg-blue-200"   },
+    { label: "Pending",  color: "bg-yellow-200" },
+    { label: "Rejected", color: "bg-red-200"    },
+    { label: "Accepted", color: "bg-green-200"  },
+  ];
+
   return (
-    <div className="px-12 py-6">
-      <h2 className="text-3xl font-bold mb-6 text-center">Job Statistics</h2>
-      <div className="flex justify-center gap-4 mb-6">
-        <select
-          className="p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={picker}
-          onChange={(e) => updateParams("picker", e.target.value)}
-        >
-          <option value="year">Year</option>
-          <option value="month">Month</option>
-          <option value="date">Date</option>
-        </select>
+    <div className="min-h-screen bg-gray-50 px-8 py-8">
 
-        {picker === "year" && (
-          <input
-            type="number"
-            className="p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={filter}
-            onChange={(e) => updateParams("filter", e.target.value)}
-          />
-        )}
-        {picker === "month" && (
-          <input
-            type="month"
-            className="p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={filter}
-            onChange={(e) => updateParams("filter", e.target.value)}
-          />
-        )}
-        {picker === "date" && (
-          <input
-            type="date"
-            className="p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={filter}
-            onChange={(e) => updateParams("filter", e.target.value)}
-          />
-        )}
-      </div>
+      {/* Page header + controls */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-base font-medium text-gray-900">Statistics</h1>
+          <p className="text-xs text-gray-400 mt-0.5">Track your application activity over time</p>
+        </div>
 
-      <div className="flex justify-around gap-12 mt-12">
-        <div className="w-[750px] h-[450px]">
-          <h3 className="text-xl font-semibold mb-6 text-center">
-            {`Jobs Applied in ${filter}`} (Total: {totalJobs})
-          </h3>
-          {barChartData && (
-            <Bar
-              data={barChartData}
-              options={{
-                plugins: {
-                  legend: { display: false },
-                  tooltip: {
-                    enabled: true,
-                    callbacks: {
-                      label: (context) => `${context.raw} jobs`,
-                    },
-                  },
-                },
-              }}
+        <div className="flex items-center gap-2">
+          <select
+            value={picker}
+            onChange={(e) => updateParams("picker", e.target.value)}
+            className="text-sm px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-300 bg-white text-gray-700 cursor-pointer"
+          >
+            <option value="year">Year</option>
+            <option value="month">Month</option>
+            <option value="date">Date</option>
+          </select>
+
+          {picker === "year" && (
+            <input
+              type="number"
+              value={filter}
+              onChange={(e) => updateParams("filter", e.target.value)}
+              className="text-sm px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-300 w-24 bg-white text-gray-700"
+            />
+          )}
+          {picker === "month" && (
+            <input
+              type="month"
+              value={filter}
+              onChange={(e) => updateParams("filter", e.target.value)}
+              className="text-sm px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-300 bg-white text-gray-700"
+            />
+          )}
+          {picker === "date" && (
+            <input
+              type="date"
+              value={filter}
+              onChange={(e) => updateParams("filter", e.target.value)}
+              className="text-sm px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-300 bg-white text-gray-700"
             />
           )}
         </div>
+      </div>
 
-        <div className="flex flex-col items-center w-[400px] h-[350px]">
-          <h3 className="text-xl font-semibold mb-6">
-            Applications of {filter} (Total: {totalPieJobs})
-          </h3>
-          {pieChartData && (
-            <Pie
-              data={pieChartData}
-              options={{
-                plugins: {
-                  legend: { display: false },
-                  tooltip: { enabled: true }
-                }
-              }}
-            />
+      {/* Charts */}
+      <div className="grid grid-cols-3 gap-5">
+
+        {/* Bar chart — 2/3 width */}
+        <div className="col-span-2 bg-white border border-gray-200 rounded-xl px-6 py-5">
+          <div className="flex items-baseline justify-between mb-5">
+            <p className="text-sm font-medium text-gray-800">Jobs applied in {filter}</p>
+            <span className="text-xs text-gray-400">{totalJobs} total</span>
+          </div>
+          {barChartData ? (
+            <Bar data={barChartData} options={chartOptions} />
+          ) : (
+            <div className="h-48 flex items-center justify-center text-sm text-gray-300">No data available</div>
+          )}
+        </div>
+
+        {/* Pie chart — 1/3 width */}
+        <div className="bg-white border border-gray-200 rounded-xl px-6 py-5">
+          <div className="flex items-baseline justify-between mb-5">
+            <p className="text-sm font-medium text-gray-800">Breakdown</p>
+            <span className="text-xs text-gray-400">{totalPieJobs} total</span>
+          </div>
+          {pieChartData ? (
+            <>
+              <Pie data={pieChartData} options={pieOptions} />
+              {/* Legend */}
+              <div className="mt-8 grid grid-cols-3 gap-x-3 gap-y-2">
+                {pieCategories.map(({ label, color }) => (
+                  <div key={label} className="flex items-center gap-2">
+                    <div className={`w-2.5 h-2.5 rounded-sm shrink-0 ${color}`} />
+                    <span className="text-xs text-gray-500">{label}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="h-48 flex items-center justify-center text-sm text-gray-300">No data available</div>
           )}
         </div>
       </div>

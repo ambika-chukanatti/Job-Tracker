@@ -68,7 +68,6 @@ const Signin = () => {
           <div>
             <div className="flex justify-between items-baseline mb-1.5">
               <label className="text-xs text-gray-500 tracking-wide">Password</label>
-              <a href="#" className="text-xs text-gray-400 hover:text-gray-600">Forgot?</a>
             </div>
             <input
               type="password"

@@ -10,8 +10,7 @@ const app = express();
 
 const corsOptions = {
   origin: [
-    'https://job-tracker-gilt.vercel.app',
-    'http://localhost:5173',
+    'https://job-tracker-gilt.vercel.app'
   ],
   methods: ['GET', 'POST', 'DELETE', 'PUT', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],

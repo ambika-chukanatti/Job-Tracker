@@ -251,7 +251,7 @@ const Dashboard = ({ location }) => {
         <tbody>
           {jobs.map((job, i) => (
             <JobRow
-              key={job.id}  {/* ✅ added missing key prop */}
+              key={job.id}
               i={i + 1}
               job={job}
               onEdit={() => handleEdit(job, i)}

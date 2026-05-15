@@ -22,6 +22,11 @@ app.use(cors(corsOptions));
 app.options('*', cors(corsOptions)); 
 app.use(express.json());
 app.use(cookieParser());
+
+app.get('/ping', (req, res) => {
+  res.status(200).json({ message: 'pong' });
+});
+
 app.use('/api', routes);
 
 sequelize

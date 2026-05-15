@@ -2,16 +2,21 @@ import React, { useEffect, useState } from "react";
 import { JobRow, EditJobModal } from "../components";
 import { useSearchParams } from "react-router-dom";
 import { ArrowUpDown, ArrowDownUp } from "lucide-react";
-const api_url = "https://job-tracker-ya9s.onrender.com/api"
-const token = sessionStorage.getItem("token")
+
+const api_url = "https://job-tracker-ya9s.onrender.com/api";
+
+const getAuthHeader = () => ({
+  "Content-Type": "application/json",
+  "Authorization": `Bearer ${sessionStorage.getItem("token")}`
+});
 
 const Dashboard = ({ location }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedJob, setSelectedJob] = useState(null);
   const [isEditModalOpen, setEditModalOpen] = useState(false);
-  const [isEditJob, setIsEditJob] = useState(true); 
-  const [jobs, setJobs] = useState([])
-  const [companies, setCompanies] = useState([])
+  const [isEditJob, setIsEditJob] = useState(true);
+  const [jobs, setJobs] = useState([]);
+  const [companies, setCompanies] = useState([]);
   const [ji, setJi] = useState(null);
 
   const search = searchParams.get("search") || "";
@@ -19,56 +24,49 @@ const Dashboard = ({ location }) => {
   const filter = searchParams.get("filter") || "All";
   const order = searchParams.get("order") || "asc";
 
-  const getJobs = async(filter = "All", search = "", sortBy = "", order = "asc") => {
+  const getJobs = async (filter = "All", search = "", sortBy = "", order = "asc") => {
     const query = new URLSearchParams({ filter, search, sortBy, order }).toString();
-    try{
-        const response = await fetch(`${api_url}/job?${query}`, {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": token
-            }
-        });
-    
-        const data = await response.json();
-        console.log(data)
-    
-        if (!response.ok) {
-            throw new Error(data.message || "Failed to verify user");
-        }
+    try {
+      const response = await fetch(`${api_url}/job?${query}`, {
+        method: "GET",
+        headers: getAuthHeader()  
+      });
 
-        setJobs(data)
-    }catch(err){
-        console.error(err)
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to fetch jobs");
+      }
+
+      setJobs(data);
+    } catch (err) {
+      console.error(err);
     }
-  }
+  };
 
-  const getCompanies = async() => {
-    try{
-        const response = await fetch(`${api_url}/company`, {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": token
-            }
-        });
-    
-        const data = await response.json();
-    
-        if (!response.ok) {
-            throw new Error(data.message || "Failed to verify user");
-        }
+  const getCompanies = async () => {
+    try {
+      const response = await fetch(`${api_url}/company`, {
+        method: "GET",
+        headers: getAuthHeader()  
+      });
 
-        setCompanies(data)
-    }catch(err){
-        console.error(err)
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to fetch companies");
+      }
+
+      setCompanies(data);
+    } catch (err) {
+      console.error(err);
     }
-  }
+  };
 
-  useEffect(()=>{
-    getJobs(filter, search, sortBy, order)
-    getCompanies()
-  },[])
+  useEffect(() => {
+    getJobs(filter, search, sortBy, order);
+    getCompanies();
+  }, []);
 
   const statusOptions = ["Bookmarked", "Applied", "No Response", "Not Selected", "I Withdrew", "Interviewing", "Negotiating", "Accepted"];
 
@@ -79,7 +77,7 @@ const Dashboard = ({ location }) => {
 
   const updateFilters = (key, value) => {
     const newParams = new URLSearchParams(searchParams);
-    
+
     if (value) {
       newParams.set(key, value);
     } else {
@@ -95,80 +93,70 @@ const Dashboard = ({ location }) => {
     };
 
     getJobs(updatedFilters.filter, updatedFilters.search, updatedFilters.sortBy, updatedFilters.order);
-  }; 
+  };
 
   const handleEdit = (job, ji) => {
-    setJi(ji)
+    setJi(ji);
     setSelectedJob(job);
     setIsEditJob(true);
     setEditModalOpen(true);
-  }
+  };
 
   const handleAddNewJob = () => {
-    setIsEditJob(false)
+    setIsEditJob(false);
     setEditModalOpen(true);
-  }
+  };
 
-  const handleSave = async(formData, id, ji) => {
-    const url = isEditJob ? `${api_url}/job/${id}` : `${api_url}/job`
-    const method = isEditJob ? "PUT" : "POST"
-    try{
+  const handleSave = async (formData, id, ji) => {
+    const url = isEditJob ? `${api_url}/job/${id}` : `${api_url}/job`;
+    const method = isEditJob ? "PUT" : "POST";
+    try {
       const response = await fetch(url, {
-          method: method,
-          headers: {
-              "Content-Type": "application/json",
-              "Authorization": token
-          },
-          body: JSON.stringify(formData)
+        method: method,
+        headers: getAuthHeader(),  
+        body: JSON.stringify(formData)
       });
-  
+
       const data = await response.json();
-  
+
       if (!response.ok) {
-          throw new Error(data.message || "Failed to verify user");
+        throw new Error(data.message || "Failed to save job");
       }
 
-      console.log(data)
-      
-      if(isEditJob){
+      if (isEditJob) {
         const updatedJobs = [...jobs];
         updatedJobs[ji] = data.job;
         setJobs(updatedJobs);
-      }else{
-        setJobs([...jobs, data.job])
+      } else {
+        setJobs([...jobs, data.job]);
       }
 
-    }catch(err){
-        console.error(err)
+      setEditModalOpen(false);  
+    } catch (err) {
+      console.error(err);
     }
-  }
+  };
 
-  const handleDelete = async(id, ji) => {
-    try{
+  const handleDelete = async (id, ji) => {
+    try {
       const response = await fetch(`${api_url}/job/${id}`, {
-          method: 'DELETE',
-          headers: {
-              "Content-Type": "application/json",
-              "Authorization": token
-          }
+        method: 'DELETE',
+        headers: getAuthHeader()  
       });
-  
+
       const data = await response.json();
-  
+
       if (!response.ok) {
-          throw new Error(data.message || "Failed to verify user");
+        throw new Error(data.message || "Failed to delete job");
       }
 
-      console.log(data)
-      
       const updatedJobs = [...jobs];
-      updatedJobs.pop(ji,1)
+      updatedJobs.splice(ji, 1);  
       setJobs(updatedJobs);
-
-    }catch(err){
-        console.error(err)
+    } catch (err) {
+      console.error(err);
     }
-  }
+  };
 
   return (
     <div className="px-8 py-6 bg-white shadow-md rounded-lg">
@@ -196,8 +184,8 @@ const Dashboard = ({ location }) => {
         <div className="w-full flex justify-end">
           <div className="flex items-center space-x-2 mr-4">
             <span className="text-gray-400 font-medium">Sort by:</span>
-            <select 
-              className="border-2 border-gray-300 p-2 rounded cursor-pointer bg-gray-800 text-white" 
+            <select
+              className="border-2 border-gray-300 p-2 rounded cursor-pointer bg-gray-800 text-white"
               value={sortBy}
               onChange={(e) => updateFilters("sortBy", e.target.value)}
             >
@@ -209,9 +197,9 @@ const Dashboard = ({ location }) => {
           </div>
           <div className="flex items-center space-x-2">
             <span className="text-gray-400 font-medium">Filter:</span>
-            <select 
+            <select
               className="border-2 border-gray-300 p-2 rounded cursor-pointer bg-gray-800 text-white"
-              value={filter} 
+              value={filter}
               onChange={(e) => updateFilters("filter", e.target.value)}
             >
               <option value="All">All</option>
@@ -238,7 +226,9 @@ const Dashboard = ({ location }) => {
               <ArrowDownUp className="w-4 h-4" />
             )}
           </button>
-          <button className="bg-green-500 text-white px-4 py-2 rounded ml-4 cursor-pointer" onClick={handleAddNewJob}>+ Add New Job</button>
+          <button className="bg-green-500 text-white px-4 py-2 rounded ml-4 cursor-pointer" onClick={handleAddNewJob}>
+            + Add New Job
+          </button>
         </div>
       </div>
 
@@ -258,21 +248,27 @@ const Dashboard = ({ location }) => {
             <th className="p-3 border-2 border-gray-300">Actions</th>
           </tr>
         </thead>
-        <tbody className>
+        <tbody>
           {jobs.map((job, i) => (
-            <JobRow i={i+1} job={job} onEdit={() => handleEdit(job, i)} onDelete={() => handleDelete(job.id, i)} />
+            <JobRow
+              key={job.id}  {/* ✅ added missing key prop */}
+              i={i + 1}
+              job={job}
+              onEdit={() => handleEdit(job, i)}
+              onDelete={() => handleDelete(job.id, i)}
+            />
           ))}
         </tbody>
       </table>
 
-      <EditJobModal 
+      <EditJobModal
         ji={ji}
-        job={selectedJob} 
+        job={selectedJob}
         companies={companies}
         isEdit={isEditJob}
-        isOpen={isEditModalOpen} 
-        onClose={() => setEditModalOpen(false)} 
-        onSave={handleSave} 
+        isOpen={isEditModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        onSave={handleSave}
       />
     </div>
   );

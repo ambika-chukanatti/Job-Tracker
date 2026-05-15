@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { CompanyCard, CompanyDetailsModal, CompanyEditModal } from "../components";
+
 const api_url = "https://job-tracker-ya9s.onrender.com/api"
-const token = sessionStorage.getItem("token")
 
 const Companies = ({ location }) => {
   const [search, setSearch] = useState("");
@@ -12,91 +12,83 @@ const Companies = ({ location }) => {
   const [ci, setCi] = useState(null);
   const [isEdit, setIsEdit] = useState(false);
 
-  const getCompanies = async() => {
-    try{
-        const response = await fetch(`${api_url}/company`, {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": token
-            }
-        });
-    
-        const data = await response.json();
-    
-        if (!response.ok) {
-            throw new Error(data.message || "Failed to verify user");
-        }
+  const getAuthHeader = () => ({
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${sessionStorage.getItem("token")}`
+  });
 
-        setCompanies(data)
-    }catch(err){
-        console.error(err)
+  const getCompanies = async() => {
+    try {
+      const response = await fetch(`${api_url}/company`, {
+        method: "GET",
+        headers: getAuthHeader()  
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to fetch companies");
+      }
+
+      setCompanies(data);
+    } catch(err) {
+      console.error(err);
     }
   }
 
-  useEffect(()=>{
-    getCompanies()
-  },[])
+  useEffect(() => {
+    getCompanies();
+  }, []);
 
   const handleSave = async(formData, id, ci) => {
-    const url = isEdit ? `${api_url}/company/${id}` : `${api_url}/company`
-    const method = isEdit ? "PUT" : "POST"
-    try{
+    const url = isEdit ? `${api_url}/company/${id}` : `${api_url}/company`;
+    const method = isEdit ? "PUT" : "POST";
+    try {
       const response = await fetch(url, {
-          method: method,
-          headers: {
-              "Content-Type": "application/json",
-              "Authorization": token
-          },
-          body: JSON.stringify(formData)
+        method: method,
+        headers: getAuthHeader(),  
+        body: JSON.stringify(formData)
       });
-  
+
       const data = await response.json();
-  
+
       if (!response.ok) {
-          throw new Error(data.message || "Failed to verify user");
+        throw new Error(data.message || "Failed to save company");
       }
 
-      console.log(data)
-      
-      if(isEdit){
+      if(isEdit) {
         const updatedCompanies = [...companies];
         updatedCompanies[ci] = data.company;
         setCompanies(updatedCompanies);
-      }else{
+      } else {
         setCompanies([...companies, data.company]);
       }
 
-      setIsDetailsModalOpen(false)
-    }catch(err){
-        console.error(err)
+      setIsDetailsModalOpen(false);
+    } catch(err) {
+      console.error(err);
     }
   }
 
   const handleDelete = async(id, ci) => {
-    try{
+    try {
       const response = await fetch(`${api_url}/company/${id}`, {
-          method: 'DELETE',
-          headers: {
-              "Content-Type": "application/json",
-              "Authorization": token
-          }
+        method: 'DELETE',
+        headers: getAuthHeader()  
       });
-  
+
       const data = await response.json();
-  
+
       if (!response.ok) {
-          throw new Error(data.message || "Failed to verify user");
+        throw new Error(data.message || "Failed to delete company");
       }
 
-      console.log(data)
-
       const updatedCompanies = [...companies];
-      updatedCompanies.pop(ci,1);
+      updatedCompanies.splice(ci, 1);  
       setCompanies(updatedCompanies);
-      setIsDetailsModalOpen(false)
-    }catch(err){
-        console.error(err)
+      setIsDetailsModalOpen(false);
+    } catch(err) {
+      console.error(err);
     }
   }
 
@@ -106,12 +98,9 @@ const Companies = ({ location }) => {
 
   return (
     <div className="w-full flex flex-col items-center mx-auto p-6 mx-16">
-      {/* Heading */}
       <h1 className="text-3xl font-bold mb-10">Companies</h1>
 
-      {/* Search & Add Company - Centered */}
       <div className="w-full flex justify-center items-center gap-4 mb-6">
-        {/* Search Input - Centered */}
         <input
           type="text"
           placeholder="Search companies..."
@@ -119,11 +108,9 @@ const Companies = ({ location }) => {
           onChange={(e) => setSearch(e.target.value)}
           className="p-3 w-1/2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-300"
         />
-
-        {/* Add Company Button - Next to Search */}
         <button
           onClick={() => {
-            setIsEdit(false)
+            setIsEdit(false);
             setIsEditModalOpen(true);
           }}
           className="px-5 py-3 bg-blue-600 text-white cursor-pointer rounded-lg hover:bg-blue-700 transition-200"
@@ -132,7 +119,6 @@ const Companies = ({ location }) => {
         </button>
       </div>
 
-      {/* Companies Grid */}
       <div className="mt-12 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-12">
         {filteredCompanies.map((company, i) => (
           <CompanyCard
@@ -148,7 +134,6 @@ const Companies = ({ location }) => {
         ))}
       </div>
 
-      {/* Company Modal */}
       <CompanyDetailsModal
         ci={ci}
         company={selectedCompany}

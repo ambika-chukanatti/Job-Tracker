@@ -1,22 +1,19 @@
 <svg width="100%" viewBox="0 0 680 680" role="img" xmlns="http://www.w3.org/2000/svg" style="">
   <title style="fill:rgb(0, 0, 0);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">Job Tracker favicon</title>
-  <desc style="fill:rgb(0, 0, 0);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">Bold minimal briefcase icon for tab/favicon use</desc>
+  <desc style="fill:rgb(0, 0, 0);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">Bold minimal briefcase icon, transparent background</desc>
 
   
 
-  <!-- Background tile -->
-  <rect x="140" y="140" width="400" height="400" rx="88" style="fill:rgb(214, 210, 205);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <!-- Briefcase body — centered at 340,340 -->
+  <rect x="110" y="300" width="460" height="300" rx="32" stroke-width="28" style="fill:none;stroke:rgb(205, 175, 91);color:rgb(255, 255, 255);stroke-width:28px;stroke-linecap:round;stroke-linejoin:round;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
 
-  <!-- Briefcase body -->
-  <rect x="210" y="310" width="260" height="190" rx="22" stroke-width="22" style="fill:none;stroke:rgb(205, 175, 91);color:rgb(255, 255, 255);stroke-width:22px;stroke-linecap:round;stroke-linejoin:round;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
-
-  <!-- Handle -->
-  <path d="M282 310 L282 272 Q282 242 340 242 Q398 242 398 272 L398 310" stroke-width="22" style="fill:none;stroke:rgb(205, 175, 91);color:rgb(255, 255, 255);stroke-width:22px;stroke-linecap:round;stroke-linejoin:round;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <!-- Handle — centered -->
+  <path d="M242 300 L242 242 Q242 198 340 198 Q438 198 438 242 L438 300" stroke-width="28" style="fill:none;stroke:rgb(205, 175, 91);color:rgb(255, 255, 255);stroke-width:28px;stroke-linecap:round;stroke-linejoin:round;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
 
   <!-- Horizontal band -->
-  <line x1="210" y1="393" x2="470" y2="393" stroke-width="18" style="fill:none;stroke:rgb(205, 175, 91);color:rgb(255, 255, 255);stroke-width:18px;stroke-linecap:round;stroke-linejoin:round;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <line x1="110" y1="448" x2="570" y2="448" stroke-width="24" style="fill:none;stroke:rgb(205, 175, 91);color:rgb(255, 255, 255);stroke-width:24px;stroke-linecap:round;stroke-linejoin:round;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
 
-  <!-- Check mark -->
-  <polyline points="300,385 328,415 384,358" stroke-width="22" style="fill:none;stroke:rgb(205, 175, 91);color:rgb(255, 255, 255);stroke-width:22px;stroke-linecap:round;stroke-linejoin:round;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <!-- Check mark — centered -->
+  <polyline points="258,438 312,500 432,368" stroke-width="30" style="fill:none;stroke:rgb(205, 175, 91);color:rgb(255, 255, 255);stroke-width:30px;stroke-linecap:round;stroke-linejoin:round;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
 
 </svg>

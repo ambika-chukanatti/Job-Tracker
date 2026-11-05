@@ -6,14 +6,17 @@ const api_url = "https://job-tracker-ya9s.onrender.com/api";
 const Signup = () => {
   const [form, setForm] = useState({ username: "", email: "", password: "" });
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState(null); // { type: "error" | "success", text }
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+    if (message) setMessage(null);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setMessage(null);
     setLoading(true);
     try {
       const response = await fetch(`${api_url}/user/create`, {
@@ -21,13 +24,30 @@ const Signup = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: form.username, email: form.email, password: form.password }),
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Failed to create user");
-      sessionStorage.setItem("token", data.data.token);
-      navigate("/dashboard");
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        setMessage({
+          type: "error",
+          text: data?.error || data?.message || "Could not create your account. Try again.",
+        });
+        setLoading(false);
+        return;
+      }
+
+      const token = data?.data?.token;
+      if (!token) {
+        setMessage({ type: "error", text: "Unexpected response from the server. Try again." });
+        setLoading(false);
+        return;
+      }
+
+      sessionStorage.setItem("token", token);
+      setMessage({ type: "success", text: "Account created successfully. Redirecting…" });
+      setTimeout(() => navigate("/dashboard"), 1000);
     } catch (err) {
       console.error(err);
-    } finally {
+      setMessage({ type: "error", text: "Can't reach the server. Check your connection and try again." });
       setLoading(false);
     }
   };
@@ -51,6 +71,20 @@ const Signup = () => {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-3">
+          {message && (
+            <div
+              role={message.type === "error" ? "alert" : "status"}
+              className={
+                "text-xs rounded-lg px-3 py-2 border " +
+                (message.type === "error"
+                  ? "text-red-700 bg-red-50 border-red-200"
+                  : "text-green-700 bg-green-50 border-green-200")
+              }
+            >
+              {message.text}
+            </div>
+          )}
+
           <div>
             <label className="block text-xs text-gray-500 mb-1.5 tracking-wide">Username</label>
             <input

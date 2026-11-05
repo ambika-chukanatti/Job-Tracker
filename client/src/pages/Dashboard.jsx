@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { JobRow, EditJobModal } from "../components";
+import { JobRow, EditJobModal, Alert } from "../components";
 import { useSearchParams } from "react-router-dom";
 import { ArrowUpDown, ArrowDownUp } from "lucide-react";
 
 const api_url = "https://job-tracker-ya9s.onrender.com/api";
+
+const NETWORK_ERROR = "Can't reach the server. Check your connection and try again.";
 
 const getAuthHeader = () => ({
   "Content-Type": "application/json",
@@ -30,6 +32,7 @@ const Dashboard = () => {
   const [isEditJob, setIsEditJob] = useState(true);
   const [jobs, setJobs] = useState([]);
   const [companies, setCompanies] = useState([]);
+  const [error, setError] = useState("");
   const [ji, setJi] = useState(null);
 
   const search = searchParams.get("search") || "";
@@ -45,10 +48,14 @@ const Dashboard = () => {
         headers: getAuthHeader()
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Failed to fetch jobs");
+      if (!response.ok) {
+        setError(data.error || "Failed to load jobs.");
+        return;
+      }
+      setError("");
       setJobs(data);
     } catch (err) {
-      console.error(err);
+      setError(NETWORK_ERROR);
     }
   };
 
@@ -59,10 +66,13 @@ const Dashboard = () => {
         headers: getAuthHeader()
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Failed to fetch companies");
+      if (!response.ok) {
+        setError(data.error || "Failed to load companies.");
+        return;
+      }
       setCompanies(data);
     } catch (err) {
-      console.error(err);
+      setError(NETWORK_ERROR);
     }
   };
 
@@ -91,6 +101,7 @@ const Dashboard = () => {
   };
 
   const handleEdit = (job, ji) => {
+    setError("");
     setJi(ji);
     setSelectedJob(job);
     setIsEditJob(true);
@@ -98,52 +109,73 @@ const Dashboard = () => {
   };
 
   const handleAddNewJob = () => {
+    setError("");
     setIsEditJob(false);
     setEditModalOpen(true);
   };
 
-  const handleSave = async (formData, id, ji) => {
+  // The modal awaits this function. It closes the modal only on success,
+  // so a failed save keeps the user's input.
+  const handleSave = async (formData, id) => {
+    setError("");
     const url = isEditJob ? `${api_url}/job/${id}` : `${api_url}/job`;
-    const method = isEditJob ? "PUT" : "POST";
+
+    // Job fields go as one JSON string, the resume file goes separately
+    const { resume, ...fields } = formData;
+    const body = new FormData();
+    body.append("data", JSON.stringify(typeof resume === "string" ? { ...fields, resume } : fields));
+    if (resume instanceof File) body.append("resume", resume);
+
     try {
       const response = await fetch(url, {
-        method,
-        headers: getAuthHeader(),
-        body: JSON.stringify(formData)
+        method: isEditJob ? "PUT" : "POST",
+        headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` }, // no Content-Type: the browser sets it for file uploads
+        body
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Failed to save job");
+      if (!response.ok) {
+        setError(data.error || "Failed to save job.");
+        return;
+      }
       if (isEditJob) {
-        const updatedJobs = [...jobs];
-        updatedJobs[ji] = data.job;
-        setJobs(updatedJobs);
+        setJobs((prev) => prev.map((j) => (j.id === data.job.id ? data.job : j)));
       } else {
-        setJobs([...jobs, data.job]);
+        setJobs((prev) => [...prev, data.job]);
       }
       setEditModalOpen(false);
     } catch (err) {
-      console.error(err);
+      setError(NETWORK_ERROR);
     }
   };
 
-  const handleDelete = async (id, ji) => {
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this job?")) return;
+    setError("");
     try {
       const response = await fetch(`${api_url}/job/${id}`, {
         method: "DELETE",
         headers: getAuthHeader()
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Failed to delete job");
-      const updatedJobs = [...jobs];
-      updatedJobs.splice(ji, 1);
-      setJobs(updatedJobs);
+      if (!response.ok) {
+        setError(data.error || "Failed to delete job.");
+        return;
+      }
+      setJobs((prev) => prev.filter((j) => j.id !== id));
     } catch (err) {
-      console.error(err);
+      setError(NETWORK_ERROR);
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 px-8 py-8">
+
+      {/* Error alert: fixed at the top so it stays visible even while the modal is open */}
+      {error && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] w-full max-w-md px-4">
+          <Alert onClose={() => setError("")}>{error}</Alert>
+        </div>
+      )}
 
       {/* Status Cards */}
       <div className="grid grid-cols-8 gap-3 mb-8">
@@ -253,7 +285,7 @@ const Dashboard = () => {
                   i={i + 1}
                   job={job}
                   onEdit={() => handleEdit(job, i)}
-                  onDelete={() => handleDelete(job.id, i)}
+                  onDelete={() => handleDelete(job.id)}
                 />
               ))
             )}

@@ -1,28 +1,46 @@
 import { useState, useEffect } from "react";
 
-const EditJobModal = ({ ji, job, isOpen, onClose, onSave, companies, isEdit }) => {
-  const newJob = {
-    job_title: "",
-    job_url: "",
-    company_name: "",
-    location: "",
-    salary: 0,
-    job_description: "",
-    status: "",
-    notes: "",
-    resume: "",
-    deadline: null,
-    date_applied: null,
-    follow_up: null,
-    company_id: 0,
-  };
+const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
+const ALLOWED_TYPES = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+];
 
+const newJob = {
+  job_title: "",
+  job_url: "",
+  company_name: "",
+  location: "",
+  salary: 0,
+  job_description: "",
+  status: "",
+  notes: "",
+  resume: "",
+  deadline: null,
+  date_applied: null,
+  follow_up: null,
+  company_id: 0,
+};
+
+const dateFields = ["deadline", "date_applied", "follow_up"];
+
+const inputClass =
+  "w-full text-sm px-3 py-2 border rounded-lg focus:outline-none focus:ring-1 transition-colors duration-200 " +
+  "bg-white text-gray-800 border-gray-200 placeholder-gray-300 focus:ring-gray-300 " +
+  "dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700 dark:placeholder-gray-500 dark:focus:ring-gray-500 dark:[color-scheme:dark]";
+
+const labelClass = "block text-xs text-gray-400 dark:text-gray-500 mb-1.5";
+
+const EditJobModal = ({ ji, job, isOpen, onClose, onSave, companies, isEdit }) => {
   const [formData, setFormData] = useState(isEdit && job ? job : newJob);
-  const dateFields = ["deadline", "date_applied", "follow_up"];
+  const [fileError, setFileError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setFormData(isEdit && job ? job : newJob);
-  }, [isEdit, job]);
+    setFileError("");
+  }, [isEdit, job, isOpen]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -33,36 +51,56 @@ const EditJobModal = ({ ji, job, isOpen, onClose, onSave, companies, isEdit }) =
   };
 
   const handleFileChange = (e) => {
-    setFormData({ ...formData, resume: e.target.files[0] });
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setFileError("Upload a PDF or Word document.");
+      e.target.value = "";
+      return;
+    }
+    if (file.size > MAX_SIZE) {
+      setFileError("The file is too large. The limit is 5 MB.");
+      e.target.value = "";
+      return;
+    }
+
+    setFileError("");
+    setFormData({ ...formData, resume: file });
   };
 
-  const handleSubmit = () => {
-    onSave(formData, formData.id, ji);
-    onClose();
+  const handleSubmit = async () => {
+    if (saving) return; // prevents double submits
+    setSaving(true);
+    try {
+      // The Dashboard closes the modal after a successful save,
+      // so on failure the modal stays open and the user keeps their input.
+      await onSave(formData, formData.id, ji);
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (!isOpen) return null;
 
-  const inputClass = "w-full text-sm px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-300 placeholder-gray-300 bg-white";
-  const labelClass = "block text-xs text-gray-400 mb-1.5";
-
   return (
-    <div className="fixed inset-0 bg-black/25 flex justify-center items-center z-50">
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm w-[680px] max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/25 dark:bg-black/60 flex justify-center items-center z-50 px-4">
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm w-[680px] max-w-full max-h-[90vh] overflow-y-auto">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
           <div>
-            <h2 className="text-sm font-medium text-gray-900">
+            <h2 className="text-sm font-medium text-gray-900 dark:text-gray-100">
               {isEdit ? "Edit job" : "Add new job"}
             </h2>
-            <p className="text-xs text-gray-400 mt-0.5">
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
               {isEdit ? "Update the details below" : "Fill in the details below"}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-300 hover:text-gray-500 transition-colors cursor-pointer"
+            aria-label="Close"
+            className="text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-300 transition-colors cursor-pointer"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -171,7 +209,7 @@ const EditJobModal = ({ ji, job, isOpen, onClose, onSave, companies, isEdit }) =
             </div>
           </div>
 
-          {/* Row 4 — dates */}
+          {/* Row 4: dates */}
           <div className="grid grid-cols-3 gap-4">
             <div>
               <label className={labelClass}>Deadline</label>
@@ -233,29 +271,45 @@ const EditJobModal = ({ ji, job, isOpen, onClose, onSave, companies, isEdit }) =
 
           {/* Resume */}
           <div>
-            <label className={labelClass}>Resume</label>
+            <label className={labelClass}>Resume (PDF or Word, up to 5 MB)</label>
+
+            {formData.resume instanceof File ? (
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1.5">Selected: {formData.resume.name}</p>
+            ) : (
+              typeof formData.resume === "string" &&
+              formData.resume && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1.5">Current file: {formData.resume}</p>
+              )
+            )}
+
             <input
               type="file"
               name="resume"
+              accept=".pdf,.doc,.docx"
               onChange={handleFileChange}
-              className="w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border file:border-gray-200 file:text-xs file:text-gray-600 file:bg-white hover:file:bg-gray-50 file:cursor-pointer"
+              className="w-full text-xs text-gray-500 dark:text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border file:border-gray-200 dark:file:border-gray-700 file:text-xs file:text-gray-600 dark:file:text-gray-300 file:bg-white dark:file:bg-gray-800 hover:file:bg-gray-50 dark:hover:file:bg-gray-700 file:cursor-pointer file:transition-colors"
             />
+            {fileError && (
+              <p role="alert" className="text-xs text-red-600 dark:text-red-400 mt-1.5">{fileError}</p>
+            )}
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-100">
+        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-100 dark:border-gray-800">
           <button
             onClick={onClose}
-            className="text-sm text-gray-500 hover:text-gray-700 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+            disabled={saving}
+            className="text-sm text-gray-500 dark:text-gray-300 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-500/10 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
-            className="text-sm font-medium bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors cursor-pointer"
+            disabled={saving}
+            className="text-sm font-medium bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900 px-4 py-2 rounded-lg hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {isEdit ? "Save changes" : "Add job"}
+            {saving ? "Saving…" : isEdit ? "Save changes" : "Add job"}
           </button>
         </div>
       </div>

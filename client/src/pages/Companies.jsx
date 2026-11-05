@@ -1,7 +1,14 @@
 import { useState, useEffect } from "react";
-import { CompanyCard, CompanyDetailsModal, CompanyEditModal } from "../components";
+import { CompanyCard, CompanyDetailsModal, CompanyEditModal, Alert } from "../components";
 
 const api_url = "https://job-tracker-ya9s.onrender.com/api";
+
+const NETWORK_ERROR = "Can't reach the server. Check your connection and try again.";
+
+const getAuthHeader = () => ({
+  "Content-Type": "application/json",
+  "Authorization": `Bearer ${sessionStorage.getItem("token")}`
+});
 
 const Companies = () => {
   const [search, setSearch] = useState("");
@@ -11,11 +18,7 @@ const Companies = () => {
   const [companies, setCompanies] = useState([]);
   const [ci, setCi] = useState(null);
   const [isEdit, setIsEdit] = useState(false);
-
-  const getAuthHeader = () => ({
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${sessionStorage.getItem("token")}`
-  });
+  const [error, setError] = useState("");
 
   const getCompanies = async () => {
     try {
@@ -24,10 +27,13 @@ const Companies = () => {
         headers: getAuthHeader()
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Failed to fetch companies");
+      if (!response.ok) {
+        setError(data.error || "Failed to load companies.");
+        return;
+      }
       setCompanies(data);
     } catch (err) {
-      console.error(err);
+      setError(NETWORK_ERROR);
     }
   };
 
@@ -35,53 +41,66 @@ const Companies = () => {
     getCompanies();
   }, []);
 
-  const handleSave = async (formData, id, ci) => {
+  const handleSave = async (formData, id) => {
+    setError("");
     const url = isEdit ? `${api_url}/company/${id}` : `${api_url}/company`;
-    const method = isEdit ? "PUT" : "POST";
     try {
       const response = await fetch(url, {
-        method,
+        method: isEdit ? "PUT" : "POST",
         headers: getAuthHeader(),
         body: JSON.stringify(formData)
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Failed to save company");
-      if (isEdit) {
-        const updatedCompanies = [...companies];
-        updatedCompanies[ci] = data.company;
-        setCompanies(updatedCompanies);
-      } else {
-        setCompanies([...companies, data.company]);
+      if (!response.ok) {
+        setError(data.error || "Failed to save company.");
+        return;
       }
+      if (isEdit) {
+        setCompanies((prev) => prev.map((c) => (c.id === data.company.id ? data.company : c)));
+      } else {
+        setCompanies((prev) => [...prev, data.company]);
+      }
+      // close whichever modal was used
       setIsDetailsModalOpen(false);
+      setIsEditModalOpen(false);
     } catch (err) {
-      console.error(err);
+      setError(NETWORK_ERROR);
     }
   };
 
-  const handleDelete = async (id, ci) => {
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this company?")) return;
+    setError("");
     try {
       const response = await fetch(`${api_url}/company/${id}`, {
         method: "DELETE",
         headers: getAuthHeader()
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Failed to delete company");
-      const updatedCompanies = [...companies];
-      updatedCompanies.splice(ci, 1);
-      setCompanies(updatedCompanies);
+      if (!response.ok) {
+        setError(data.error || "Failed to delete company.");
+        return;
+      }
+      setCompanies((prev) => prev.filter((c) => c.id !== id));
       setIsDetailsModalOpen(false);
     } catch (err) {
-      console.error(err);
+      setError(NETWORK_ERROR);
     }
   };
 
   const filteredCompanies = companies.filter((company) =>
-    company.company_name.toLowerCase().includes(search.toLowerCase())
+    (company.company_name || "").toLowerCase().includes(search.toLowerCase())
   );
 
   return (
     <div className="min-h-screen bg-gray-50 px-8 py-8">
+
+      {/* Error alert */}
+      {error && (
+        <div className="mb-4">
+          <Alert onClose={() => setError("")}>{error}</Alert>
+        </div>
+      )}
 
       {/* Page header */}
       <div className="flex items-center justify-between mb-6">
@@ -91,6 +110,7 @@ const Companies = () => {
         </div>
         <button
           onClick={() => {
+            setError("");
             setIsEdit(false);
             setIsEditModalOpen(true);
           }}
@@ -129,6 +149,7 @@ const Companies = () => {
               key={company.id}
               company={company}
               onOpen={() => {
+                setError("");
                 setCi(i);
                 setIsEdit(true);
                 setSelectedCompany(company);

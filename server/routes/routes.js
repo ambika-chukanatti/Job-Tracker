@@ -7,17 +7,18 @@ import { createCompany, getCompaniesByUser, getCompanyById, updateCompany, delet
 import { getTargetByUser, updateTarget } from "../controllers/targets.js";
 import { getUser, createUser, verifyUser, deleteUser, updateUser } from "../controllers/users.js";
 import { getPieChartData, getBarChartData } from '../controllers/statistics.js';
+import { upload } from "../utils/upload.js";
 
 router.get("/user", auth, getUser);
 router.post("/user/create", createUser);
 router.post("/user/verify", verifyUser);
 router.put("/user", auth, updateUser);
-router.delete("user", auth, deleteUser);
+router.delete("/user", auth, deleteUser);
 
-router.post("/job", auth, createJob);
+router.post("/job", auth, upload.single("resume"), createJob);
 router.get("/job", auth, getJobsByUser);
 router.get("/job/:id", auth, getJobById);
-router.put("/job/:id", auth, updateJob);
+router.put("/job/:id", auth, upload.single("resume"), updateJob);
 router.delete("/job/:id", auth, deleteJob);
 
 router.post("/company", auth, createCompany);
@@ -33,5 +34,3 @@ router.get("/chart/bar", auth, getBarChartData);
 router.get("/chart/pie", auth, getPieChartData);
 
 export default router;
-
-

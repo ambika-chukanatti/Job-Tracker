@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Bar, Pie } from "react-chartjs-2";
 import "chart.js/auto";
@@ -11,51 +11,47 @@ const getAuthHeader = () => ({
   "Authorization": `Bearer ${sessionStorage.getItem("token")}`
 });
 
-// Follows the "dark" class on <html>, the same switch Tailwind's dark: classes use
-const useDarkMode = () => {
-  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains("dark"));
+// True when the page is inside a ".dark" element (wherever your toggle puts the class),
+// which is the same rule Tailwind's dark: classes follow
+const useDarkMode = (ref) => {
+  const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
-    const observer = new MutationObserver(() =>
-      setIsDark(document.documentElement.classList.contains("dark"))
-    );
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    const check = () => setIsDark(!!ref.current?.closest(".dark"));
+    check();
+
+    // Watch class changes anywhere in the document (html, body, or a wrapper div)
+    const observer = new MutationObserver(check);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+      subtree: true,
+    });
     return () => observer.disconnect();
-  }, []);
+  }, [ref]);
 
   return isDark;
 };
 
-const pieLabels = ["Saved", "Applied", "Pending", "Rejected", "Accepted"];
+const pieLabels = [
+  "Bookmarked", "Applied", "No Response", "Not Selected",
+  "I Withdrew", "Interviewing", "Negotiating", "Accepted",
+];
+
+const BAR_FILL = "rgba(99, 102, 241, 0.6)";
+const BAR_LINE = "rgb(99, 102, 241)";
+const GRID = "rgba(128, 128, 128, 0.15)";
 
 const chartThemes = {
   light: {
-    barFill: "rgb(17 24 39 / 0.08)",
-    barLine: "rgb(17 24 39 / 0.7)",
     tick: "#6b7280",
-    grid: "rgb(243 244 246)",
     tooltipBg: "#111827",
-    pie: [
-      "rgb(209 213 219)", // Saved    - gray
-      "rgb(191 219 254)", // Applied  - blue
-      "rgb(254 240 138)", // Pending  - yellow
-      "rgb(254 202 202)", // Rejected - red
-      "rgb(187 247 208)", // Accepted - green
-    ],
+    pie: ["#d1d5db", "#bfdbfe", "#fef08a", "#fecaca", "#fed7aa", "#e9d5ff", "#a5f3fc", "#bbf7d0"],
   },
   dark: {
-    barFill: "rgb(229 231 235 / 0.18)",
-    barLine: "rgb(229 231 235 / 0.85)",
     tick: "#9ca3af",
-    grid: "rgb(255 255 255 / 0.08)",
     tooltipBg: "#374151",
-    pie: [
-      "rgb(107 114 128)", // Saved
-      "rgb(96 165 250)",  // Applied
-      "rgb(250 204 21)",  // Pending
-      "rgb(248 113 113)", // Rejected
-      "rgb(74 222 128)",  // Accepted
-    ],
+    pie: ["#6b7280", "#60a5fa", "#facc15", "#f87171", "#fb923c", "#c084fc", "#22d3ee", "#4ade80"],
   },
 };
 
@@ -68,11 +64,12 @@ const cardClass =
   "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl px-6 py-5 transition-colors duration-200";
 
 const Statistics = () => {
+  const rootRef = useRef(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const [barValues, setBarValues] = useState(null);
   const [pieValues, setPieValues] = useState(null);
   const [error, setError] = useState("");
-  const isDark = useDarkMode();
+  const isDark = useDarkMode(rootRef);
   const theme = isDark ? chartThemes.dark : chartThemes.light;
 
   const picker = searchParams.get("picker") || "year";
@@ -111,11 +108,15 @@ const Statistics = () => {
     fetchChart("pie").then(setPieValues);
   }, [picker, filter]);
 
-  // Colors are applied here at render time, so they follow the theme
-  const labels =
-    picker === "year"
-      ? ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-      : Array.from({ length: 30 }, (_, i) => i + 1);
+  let labels;
+  if (picker === "year") {
+    labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  } else if (picker === "month") {
+    const [y, m] = filter.split("-").map(Number);
+    labels = Array.from({ length: new Date(y, m, 0).getDate() }, (_, i) => i + 1);
+  } else {
+    labels = [filter];
+  }
 
   const totalJobs = barValues ? barValues.reduce((sum, v) => sum + v, 0) : 0;
   const totalPieJobs = pieValues ? pieValues.reduce((sum, v) => sum + v, 0) : 0;
@@ -124,8 +125,8 @@ const Statistics = () => {
     labels,
     datasets: [{
       data: barValues,
-      backgroundColor: theme.barFill,
-      borderColor: theme.barLine,
+      backgroundColor: BAR_FILL,
+      borderColor: BAR_LINE,
       borderWidth: 1,
       borderRadius: 4,
     }],
@@ -151,7 +152,7 @@ const Statistics = () => {
     plugins: { legend: { display: false }, tooltip },
     scales: {
       x: { grid: { display: false }, border: { display: false }, ticks: { color: theme.tick, font: { size: 11 } } },
-      y: { grid: { color: theme.grid }, border: { display: false }, ticks: { color: theme.tick, font: { size: 11 } } },
+      y: { grid: { color: GRID }, border: { display: false }, ticks: { color: theme.tick, font: { size: 11 } } },
     },
   };
 
@@ -160,7 +161,7 @@ const Statistics = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 px-8 py-8 transition-colors duration-200">
+    <div ref={rootRef} className="min-h-screen bg-gray-50 dark:bg-gray-950 px-8 py-8 transition-colors duration-200">
 
       {error && (
         <div className="mb-4">
@@ -223,7 +224,7 @@ const Statistics = () => {
             <span className="text-xs text-gray-400 dark:text-gray-500">{totalJobs} total</span>
           </div>
           {barChartData ? (
-            <Bar data={barChartData} options={chartOptions} />
+            <Bar key={isDark ? "dark" : "light"} data={barChartData} options={chartOptions} />
           ) : (
             <div className="h-48 flex items-center justify-center text-sm text-gray-300 dark:text-gray-600">No data available</div>
           )}
@@ -237,7 +238,7 @@ const Statistics = () => {
           </div>
           {pieChartData ? (
             <>
-              <Pie data={pieChartData} options={pieOptions} />
+              <Pie key={isDark ? "dark" : "light"} data={pieChartData} options={pieOptions} />
               {/* Legend: uses the same colors as the pie, so they always match */}
               <div className="mt-8 grid grid-cols-3 gap-x-3 gap-y-2">
                 {pieLabels.map((label, i) => (

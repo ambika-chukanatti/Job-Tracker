@@ -4,6 +4,9 @@ import sequelize from "../utils/database.js";
 import cron from "node-cron";
 import nodemailer from "nodemailer";
 
+// FormData sends everything as strings, so empty dates arrive as ""
+const toDate = (v) => (v === "" || v === "null" || v === undefined ? null : v);
+
 const getEmailTemplate = (type, jobTitle, companyName, date) => {
   const templates = {
     deadlineReminder: `Subject: Upcoming Deadline for ${jobTitle} at ${companyName}  
@@ -40,7 +43,6 @@ Job Application Tracker`,
   return templates[type] || "No template found.";
 };
 
-
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -50,8 +52,8 @@ const transporter = nodemailer.createTransport({
 });
 
 const scheduleEmail = (email, type, jobTitle, companyName, date) => {
-  try{
-    if (!date) return; 
+  try {
+    if (!date) return;
 
     const formattedDate = new Date(date);
     const emailText = getEmailTemplate(type, jobTitle, companyName, formattedDate.toDateString());
@@ -66,16 +68,30 @@ const scheduleEmail = (email, type, jobTitle, companyName, date) => {
           to: email,
           subject: "Job Application Reminder",
           text: emailText,
-          html: emailText.replace(/\*\*(.*?)\*\*/g, "<b>$1</b>")
+          html: emailText.replace(/\*\*(.*?)\*\*/g, "<b>$1</b>"),
         },
         (err, info) => {
           if (err) console.error("Email error:", err);
           else console.log("Email sent:", info.response);
         }
       );
-    })
-  }catch(err){
-    console.log(err)
+    });
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+const scheduleJobEmails = (email, jobTitle, companyName, deadline, followUp) => {
+  if (deadline) {
+    const dayBeforeDeadline = new Date(deadline);
+    dayBeforeDeadline.setDate(dayBeforeDeadline.getDate() - 1);
+
+    scheduleEmail(email, "deadlineReminder", jobTitle, companyName, dayBeforeDeadline);
+    scheduleEmail(email, "deadlineToday", jobTitle, companyName, deadline);
+  }
+
+  if (followUp) {
+    scheduleEmail(email, "followUpReminder", jobTitle, companyName, followUp);
   }
 };
 
@@ -88,7 +104,14 @@ export const createJob = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const { company_id, job_title, job_url, company_name, location, salary, job_description, status, notes, resume, deadline, date_applied, follow_up } = req.body;
+    const {
+      company_id, job_title, job_url, company_name, location, salary,
+      job_description, status, notes, deadline, date_applied, follow_up,
+    } = req.body;
+
+    const deadlineDate = toDate(deadline);
+    const appliedDate = toDate(date_applied);
+    const followUpDate = toDate(follow_up);
 
     const job = await Job.create({
       user_id,
@@ -101,27 +124,17 @@ export const createJob = async (req, res) => {
       job_description,
       status,
       notes,
-      resume,
-      deadline,
-      date_applied,
-      follow_up
+      resume: req.file ? req.file.filename : null,
+      deadline: deadlineDate,
+      date_applied: appliedDate,
+      follow_up: followUpDate,
     });
 
-    if (deadline) {
-      const dayBeforeDeadline = new Date(deadline);
-      dayBeforeDeadline.setDate(dayBeforeDeadline.getDate() - 1);
-
-      scheduleEmail(user.email, "deadlineReminder", job_title, company_name, dayBeforeDeadline);
-      scheduleEmail(user.email, "deadlineToday", job_title, company_name, deadline);
-    }
-
-    if (follow_up) {
-      scheduleEmail(user.email, "followUpReminder", job_title, company_name, follow_up);
-    }
+    scheduleJobEmails(user.email, job_title, company_name, deadlineDate, followUpDate);
 
     res.status(201).json({ message: "Job created successfully", job });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -130,8 +143,7 @@ export const getJobsByUser = async (req, res) => {
   try {
     const user_id = req.user.id;
     const { filter, search, sortBy, order } = req.query;
-    console.log({ filter, search, sortBy, order })
-    
+
     // Initialize whereClause with user_id
     const whereClause = { user_id };
 
@@ -148,17 +160,17 @@ export const getJobsByUser = async (req, res) => {
         { location: { [Op.like]: `%${search}%` } },
         { status: { [Op.like]: `%${search}%` } },
         sequelize.where(sequelize.cast(sequelize.col("salary"), "CHAR"), {
-          [Op.like]: `%${search}%`
+          [Op.like]: `%${search}%`,
         }),
         sequelize.where(sequelize.fn("DATE_FORMAT", sequelize.col("deadline"), "%Y-%m-%d"), {
-          [Op.like]: `%${search}%`
+          [Op.like]: `%${search}%`,
         }),
         sequelize.where(sequelize.fn("DATE_FORMAT", sequelize.col("date_applied"), "%Y-%m-%d"), {
-          [Op.like]: `%${search}%`
+          [Op.like]: `%${search}%`,
         }),
         sequelize.where(sequelize.fn("DATE_FORMAT", sequelize.col("follow_up"), "%Y-%m-%d"), {
-          [Op.like]: `%${search}%`
-        })
+          [Op.like]: `%${search}%`,
+        }),
       ];
     }
 
@@ -167,7 +179,7 @@ export const getJobsByUser = async (req, res) => {
 
     // Fetch jobs from the database
     const jobs = await Job.findAll({
-      where: whereClause, 
+      where: whereClause,
       order: orderClause,
     });
 
@@ -181,7 +193,12 @@ export const getJobsByUser = async (req, res) => {
 export const getJobById = async (req, res) => {
   try {
     const { id } = req.params;
-    const job = await Job.findByPk(id, { include: [User, Company] });
+    const user_id = req.user.id;
+
+    const job = await Job.findOne({
+      where: { id, user_id },
+      include: [User, Company],
+    });
 
     if (!job) {
       return res.status(404).json({ message: "Job not found." });
@@ -189,7 +206,7 @@ export const getJobById = async (req, res) => {
 
     res.json(job);
   } catch (error) {
-    console.log(error)
+    console.log(error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -203,32 +220,46 @@ export const updateJob = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    console.log(req.body)
+    const {
+      id, company_id, job_title, job_url, company_name, location, salary,
+      job_description, status, notes, deadline, date_applied, follow_up,
+    } = req.body;
 
-    const { id, job_title, job_url, company_name, location, salary, job_description, status, notes, resume, deadline, date_applied, follow_up } = req.body;
-
-    const job = await Job.findByPk(id);
+    // Only the owner can update a job
+    const job = await Job.findOne({ where: { id, user_id } });
     if (!job) {
       return res.status(404).json({ message: "Job not found." });
     }
 
-    await job.update({ job_title, job_url, company_name, location, salary, job_description, status, notes, resume, deadline, date_applied, follow_up });
+    const deadlineDate = toDate(deadline);
+    const appliedDate = toDate(date_applied);
+    const followUpDate = toDate(follow_up);
 
-    if (deadline) {
-      const dayBeforeDeadline = new Date(deadline);
-      dayBeforeDeadline.setDate(dayBeforeDeadline.getDate() - 1);
+    const updates = {
+      job_title,
+      job_url,
+      company_name,
+      location,
+      salary,
+      job_description,
+      status,
+      notes,
+      deadline: deadlineDate,
+      date_applied: appliedDate,
+      follow_up: followUpDate,
+    };
 
-      scheduleEmail(user.email, "deadlineReminder", job_title, company_name, dayBeforeDeadline);
-      scheduleEmail(user.email, "deadlineToday", job_title, company_name, deadline);
-    }
+    if (company_id) updates.company_id = company_id;
+    // Only replace the resume when a new file was uploaded
+    if (req.file) updates.resume = req.file.filename;
 
-    if (follow_up) {
-      scheduleEmail(user.email, "followUpReminder", job_title, company_name, follow_up);
-    }
+    await job.update(updates);
+
+    scheduleJobEmails(user.email, job_title, company_name, deadlineDate, followUpDate);
 
     res.json({ message: "Job updated successfully", job });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -236,8 +267,9 @@ export const updateJob = async (req, res) => {
 export const deleteJob = async (req, res) => {
   try {
     const { id } = req.params;
-    const job = await Job.findByPk(id);
+    const user_id = req.user.id;
 
+    const job = await Job.findOne({ where: { id, user_id } });
     if (!job) {
       return res.status(404).json({ message: "Job not found." });
     }
@@ -245,9 +277,7 @@ export const deleteJob = async (req, res) => {
     await job.destroy();
     res.json({ message: "Job deleted successfully" });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     res.status(500).json({ error: error.message });
   }
 };
-
-

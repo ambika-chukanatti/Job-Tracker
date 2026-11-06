@@ -22,11 +22,13 @@ app.options('*', cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
 
-app.get('/ping', (req, res) => {
-  res.status(200).json({ message: 'pong' });
-});
-
+app.use("/uploads", express.static("uploads"));
 app.use('/api', routes);
+
+app.use((err, req, res, next) => {
+  if (err) return res.status(400).json({ error: err.message });
+  next();
+});
 
 sequelize
   .sync()

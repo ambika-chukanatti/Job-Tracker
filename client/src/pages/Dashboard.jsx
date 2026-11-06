@@ -120,11 +120,16 @@ const Dashboard = () => {
     setError("");
     const url = isEditJob ? `${api_url}/job/${id}` : `${api_url}/job`;
 
-    // Job fields go as one JSON string, the resume file goes separately
-    const { resume, ...fields } = formData;
+    // Each field is sent separately so the backend can read it from req.body
     const body = new FormData();
-    body.append("data", JSON.stringify(typeof resume === "string" ? { ...fields, resume } : fields));
-    if (resume instanceof File) body.append("resume", resume);
+    Object.entries(formData).forEach(([key, value]) => {
+      if (key === "resume") {
+        // On edit, resume is just the old filename string. Only send a real File.
+        if (value instanceof File) body.append("resume", value);
+        return;
+      }
+      body.append(key, value ?? ""); // null dates become "", which the backend turns back into null
+    });
 
     try {
       const response = await fetch(url, {

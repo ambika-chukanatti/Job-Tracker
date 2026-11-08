@@ -117,12 +117,6 @@ const Signin = () => {
           <div>
             <div className="flex justify-between items-baseline mb-1.5">
               <label className="text-xs text-gray-500 dark:text-gray-400 tracking-wide">Password</label>
-              <Link
-                to="/forgot-password"
-                className="text-xs text-gray-400 dark:text-gray-500 hover:underline hover:opacity-80 transition-opacity duration-200"
-              >
-                Forgot password?
-              </Link>
             </div>
             <input
               type="password"

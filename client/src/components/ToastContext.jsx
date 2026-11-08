@@ -52,7 +52,7 @@ export const ToastProvider = ({ children }) => {
         }
       `}</style>
 
-      <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 w-80 max-w-[calc(100vw-2rem)] pointer-events-none">
+      <div className="fixed top-2 right-4 z-50 flex flex-col gap-2 w-80 max-w-[calc(100vw-2rem)] pointer-events-none">
         {toasts.map((t) => (
           <div
             key={t.id}

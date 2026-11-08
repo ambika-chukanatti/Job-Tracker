@@ -63,6 +63,18 @@ const controlClass =
 const cardClass =
   "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl px-6 py-5 transition-colors duration-200";
 
+// Default filter value for each picker: this year as "2026", this month as "2026-11"
+const getDefaultFilter = (picker) => {
+  const now = new Date();
+  if (picker === "month") {
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  }
+  return String(now.getFullYear());
+};
+
+const isValidFilter = (picker, filter) =>
+  picker === "month" ? /^\d{4}-(0[1-9]|1[0-2])$/.test(filter) : /^\d{4}$/.test(filter);
+
 const Statistics = () => {
   const rootRef = useRef(null);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -72,15 +84,18 @@ const Statistics = () => {
   const isDark = useDarkMode(rootRef);
   const theme = isDark ? chartThemes.dark : chartThemes.light;
 
-  const picker = searchParams.get("picker") || "year";
-  const filter = searchParams.get("filter") || new Date().getFullYear();
+  // Only "year" and "month" exist now. An old link with picker=date falls back to year.
+  const picker = searchParams.get("picker") === "month" ? "month" : "year";
+  const filter = searchParams.get("filter") || getDefaultFilter(picker);
+  const filterIsValid = isValidFilter(picker, filter);
 
   const updateParams = (key, value) => {
     const newParams = new URLSearchParams(searchParams);
     if (value) newParams.set(key, value);
     else newParams.delete(key);
     if (key === "picker") {
-      newParams.set("filter", value === "year" ? new Date().getFullYear() : "");
+      // Switching picker resets the filter to this year / this month
+      newParams.set("filter", getDefaultFilter(value));
     }
     setSearchParams(newParams);
   };
@@ -102,6 +117,9 @@ const Statistics = () => {
   };
 
   useEffect(() => {
+    // Don't call the server while the year is half typed (e.g. "20")
+    if (!filterIsValid) return;
+
     let cancelled = false;
 
     Promise.all([fetchChart("bar"), fetchChart("pie")]).then(([bar, pie]) => {
@@ -119,14 +137,14 @@ const Statistics = () => {
     };
   }, [picker, filter]);
 
-  let labels;
+  let labels = [];
+  let chartTitle = filter;
   if (picker === "year") {
     labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  } else if (picker === "month") {
+  } else if (filterIsValid) {
     const [y, m] = filter.split("-").map(Number);
     labels = Array.from({ length: new Date(y, m, 0).getDate() }, (_, i) => i + 1);
-  } else {
-    labels = [filter];
+    chartTitle = new Date(y, m - 1).toLocaleString("default", { month: "long", year: "numeric" });
   }
 
   const totalJobs = barValues ? barValues.reduce((sum, v) => sum + v, 0) : 0;
@@ -189,7 +207,6 @@ const Statistics = () => {
           >
             <option value="year">Year</option>
             <option value="month">Month</option>
-            <option value="date">Date</option>
           </select>
 
           {picker === "year" && (
@@ -208,14 +225,6 @@ const Statistics = () => {
               className={controlClass}
             />
           )}
-          {picker === "date" && (
-            <input
-              type="date"
-              value={filter}
-              onChange={(e) => updateParams("filter", e.target.value)}
-              className={controlClass}
-            />
-          )}
         </div>
       </div>
 
@@ -225,7 +234,7 @@ const Statistics = () => {
         {/* Bar chart: 2/3 width */}
         <div className={`col-span-2 ${cardClass}`}>
           <div className="flex items-baseline justify-between mb-5">
-            <p className="text-sm font-medium text-gray-800 dark:text-gray-100">Jobs applied in {filter}</p>
+            <p className="text-sm font-medium text-gray-800 dark:text-gray-100">Jobs applied in {chartTitle}</p>
             <span className="text-xs text-gray-400 dark:text-gray-500">{totalJobs} total</span>
           </div>
           {barChartData ? (

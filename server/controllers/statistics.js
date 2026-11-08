@@ -4,7 +4,6 @@ import { Job } from "../models/association.js";
 const PATTERNS = {
   year: /^\d{4}$/,
   month: /^\d{4}-(0[1-9]|1[0-2])$/,
-  date: /^\d{4}-\d{2}-\d{2}$/,
 };
 
 // Returns { start, end, daysInMonth? } or null if picker/filter are invalid
@@ -15,19 +14,14 @@ const getRange = (picker, filter) => {
     return { start: `${filter}-01-01`, end: `${filter}-12-31` };
   }
 
-  if (picker === "month") {
-    const [y, m] = filter.split("-").map(Number);
-    const daysInMonth = new Date(y, m, 0).getDate();
-    return {
-      start: `${filter}-01`,
-      end: `${filter}-${String(daysInMonth).padStart(2, "0")}`,
-      daysInMonth,
-    };
-  }
-
-  // date
-  if (Number.isNaN(Date.parse(filter))) return null;
-  return { start: filter, end: filter };
+  // month
+  const [y, m] = filter.split("-").map(Number);
+  const daysInMonth = new Date(y, m, 0).getDate();
+  return {
+    start: `${filter}-01`,
+    end: `${filter}-${String(daysInMonth).padStart(2, "0")}`,
+    daysInMonth,
+  };
 };
 
 export const getBarChartData = async (req, res) => {
@@ -36,24 +30,16 @@ export const getBarChartData = async (req, res) => {
     const range = getRange(picker, filter);
     if (!range) return res.status(400).json({ error: "Invalid picker or filter value" });
 
-    const where = {
-      user_id: req.user.id,
-      date_applied: { [Op.between]: [range.start, range.end] },
-    };
-
-    // date_applied is DATEONLY, so a single day is just one bar
-    if (picker === "date") {
-      const count = await Job.count({ where });
-      return res.json([count]);
-    }
-
     const isYear = picker === "year";
     const jobs = await Job.findAll({
       attributes: [
         [fn(isYear ? "MONTH" : "DAY", col("date_applied")), "bucket"],
         [fn("COUNT", col("id")), "count"],
       ],
-      where,
+      where: {
+        user_id: req.user.id,
+        date_applied: { [Op.between]: [range.start, range.end] },
+      },
       group: ["bucket"],
       raw: true,
     });

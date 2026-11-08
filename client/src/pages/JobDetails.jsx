@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Alert } from "../components";
+import { useToast } from "../components/ToastContext"; // adjust path if needed
 
 const api_url = "https://job-tracker-ya9s.onrender.com/api";
 
@@ -32,14 +32,13 @@ const statusColors = {
 const JobDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState("info");
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
   const getJob = async () => {
     setLoading(true);
-    setError("");
     try {
       const response = await fetch(`${api_url}/job/${id}`, {
         method: "GET",
@@ -48,13 +47,13 @@ const JobDetails = () => {
       const data = await response.json();
       if (!response.ok) {
         setJob(null);
-        setError(data.error || "Failed to load this job.");
+        toast.error(data.error || "Failed to load this job.");
         return;
       }
       setJob(data);
     } catch (err) {
       setJob(null);
-      setError(NETWORK_ERROR);
+      toast.error(NETWORK_ERROR);
     } finally {
       setLoading(false);
     }
@@ -101,18 +100,16 @@ const JobDetails = () => {
         </div>
       )}
 
-      {/* Load failed */}
+      {/* Load failed: the error itself shows as a toast, this is just the empty state */}
       {!loading && !job && (
-        <div className="max-w-md mx-auto py-16 space-y-4">
-          <Alert onClose={() => setError("")}>{error || "This job couldn't be loaded."}</Alert>
-          <div className="text-center">
-            <button
-              onClick={getJob}
-              className="text-sm text-gray-700 border border-gray-200 rounded-lg px-4 py-2 bg-white hover:bg-gray-50 transition-colors cursor-pointer"
-            >
-              Try again
-            </button>
-          </div>
+        <div className="max-w-md mx-auto py-16 text-center space-y-4">
+          <p className="text-sm text-gray-400">This job couldn't be loaded.</p>
+          <button
+            onClick={getJob}
+            className="text-sm text-gray-700 border border-gray-200 rounded-lg px-4 py-2 bg-white hover:bg-gray-50 transition-colors cursor-pointer"
+          >
+            Try again
+          </button>
         </div>
       )}
 

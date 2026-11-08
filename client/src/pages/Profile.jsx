@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { GoalEditModal, Alert } from "../components";
+import { GoalEditModal } from "../components";
+import { useToast } from "../components/ToastContext"; // adjust path if needed
 
 const api_url = "https://job-tracker-ya9s.onrender.com/api";
 
@@ -15,28 +16,20 @@ const Profile = () => {
   const [user, setUser] = useState(null);
   const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const toast = useToast();
 
-  // Success messages disappear on their own
-  useEffect(() => {
-    if (!success) return;
-    const timer = setTimeout(() => setSuccess(""), 3000);
-    return () => clearTimeout(timer);
-  }, [success]);
-
+  // Both loaders return an error message (or null) instead of showing it themselves,
+  // so a failed page load shows one toast rather than two
   const getGoal = async () => {
     try {
       const response = await fetch(`${api_url}/target`, { method: "GET", headers: getAuthHeader() });
       const data = await response.json();
-      if (response.status === 404) return; // no goal set yet is normal, not an error
-      if (!response.ok) {
-        setError(data.error || "Failed to load your career goal.");
-        return;
-      }
+      if (response.status === 404) return null; // no goal set yet is normal, not an error
+      if (!response.ok) return data.error || "Failed to load your career goal.";
       setGoal(data);
+      return null;
     } catch (err) {
-      setError(NETWORK_ERROR);
+      return NETWORK_ERROR;
     }
   };
 
@@ -44,19 +37,19 @@ const Profile = () => {
     try {
       const response = await fetch(`${api_url}/user`, { method: "GET", headers: getAuthHeader() });
       const data = await response.json();
-      if (!response.ok) {
-        setError(data.error || "Failed to load your profile.");
-        return;
-      }
+      if (!response.ok) return data.error || "Failed to load your profile.";
       setUser(data);
+      return null;
     } catch (err) {
-      setError(NETWORK_ERROR);
+      return NETWORK_ERROR;
     }
   };
 
   useEffect(() => {
-    getGoal();
-    getUser();
+    Promise.all([getGoal(), getUser()]).then(([goalError, userError]) => {
+      const err = goalError || userError;
+      if (err) toast.error(err);
+    });
   }, []);
 
   const handleUserChange = (e) => {
@@ -65,7 +58,6 @@ const Profile = () => {
 
   // The modal awaits this and closes only on success, so a failed save keeps the user's input
   const handleSaveGoal = async (formData) => {
-    setError("");
     try {
       const response = await fetch(`${api_url}/target`, {
         method: "PUT",
@@ -74,43 +66,39 @@ const Profile = () => {
       });
       const data = await response.json();
       if (!response.ok) {
-        setError(data.error || "Failed to update your goal.");
+        toast.error(data.error || "Failed to update your goal.");
         return;
       }
       setGoal(data.target);
       setIsGoalModalOpen(false);
-      setSuccess("Career goal updated.");
+      toast.success("Career goal updated.");
     } catch (err) {
-      setError(NETWORK_ERROR);
+      toast.error(NETWORK_ERROR);
     }
   };
 
   const handleDeleteUser = async () => {
     if (!window.confirm("Are you sure you want to delete your account? This cannot be undone.")) return;
-    setError("");
     try {
       const response = await fetch(`${api_url}/user`, { method: "DELETE", headers: getAuthHeader() });
       const data = await response.json();
       if (!response.ok) {
-        setError(data.error || "Failed to delete your account.");
+        toast.error(data.error || "Failed to delete your account.");
         return;
       }
       sessionStorage.removeItem("token");
       setUser(null);
       window.location.href = "/";
     } catch (err) {
-      setError(NETWORK_ERROR);
+      toast.error(NETWORK_ERROR);
     }
   };
 
   const handleSaveUser = async () => {
-    setError("");
-    setSuccess("");
-
     const username = user?.username?.trim();
     const email = user?.email?.trim();
     if (!username || !email) {
-      setError("Username and email can't be empty.");
+      toast.error("Username and email can't be empty.");
       return;
     }
 
@@ -123,14 +111,14 @@ const Profile = () => {
       });
       const data = await response.json();
       if (!response.ok) {
-        setError(data.error || "Failed to update your profile.");
+        toast.error(data.error || "Failed to update your profile.");
         return;
       }
       const updated = data.user ?? data; // the backend returns { message, user }
       setUser({ username: updated.username, email: updated.email });
-      setSuccess("Profile updated.");
+      toast.success("Profile updated.");
     } catch (err) {
-      setError(NETWORK_ERROR);
+      toast.error(NETWORK_ERROR);
     } finally {
       setSaving(false);
     }
@@ -142,17 +130,6 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 px-8 py-8">
-
-      {/* Alerts: fixed at the top so they stay visible above the goal modal */}
-      {(error || success) && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] w-full max-w-md px-4">
-          {error ? (
-            <Alert onClose={() => setError("")}>{error}</Alert>
-          ) : (
-            <Alert type="success" onClose={() => setSuccess("")}>{success}</Alert>
-          )}
-        </div>
-      )}
 
       <div className="mb-6">
         <h1 className="text-base font-medium text-gray-900">Profile</h1>
@@ -223,10 +200,7 @@ const Profile = () => {
 
         {/* Goal card: 3/5 */}
         <div
-          onClick={() => {
-            setError("");
-            setIsGoalModalOpen(true);
-          }}
+          onClick={() => setIsGoalModalOpen(true)}
           className="col-span-3 bg-white border border-gray-200 rounded-xl px-6 py-5 cursor-pointer hover:border-gray-300 hover:shadow-sm transition-all"
         >
           <div className="flex items-center justify-between mb-5">

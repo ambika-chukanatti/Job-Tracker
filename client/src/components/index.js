@@ -5,7 +5,6 @@ import CompanyDetailsModal from "./CompanyDetailsModal";
 import EditJobModal from "./EditJobModal";
 import CompanyCard from "./CompanyCard";
 import GoalEditModal from "./GoalEditModal";
-import Alert from "./Alert"
 
 export { 
     Header, 
@@ -14,6 +13,5 @@ export {
     GoalEditModal, 
     CompanyDetailsModal, 
     EditJobModal, 
-    CompanyCard, 
-    Alert
+    CompanyCard
 }

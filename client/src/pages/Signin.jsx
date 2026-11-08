@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useToast } from "../components/ToastContext"; // adjust path if needed
 
 const api_url = "https://job-tracker-ya9s.onrender.com/api";
 
@@ -17,13 +18,12 @@ const inputClass =
 const Signin = () => {
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState(null); // { type: "error" | "success", text }
   const [copied, setCopied] = useState(null); // "email" | "password" | null
   const navigate = useNavigate();
+  const toast = useToast();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
-    if (message) setMessage(null);
   };
 
   const handleCopy = async (key, value) => {
@@ -38,8 +38,17 @@ const Signin = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage(null);
     setLoading(true);
+
+    // If login is slow (Render cold start), let the user know why
+    let wakeToastId = null;
+    const wakeTimer = setTimeout(() => {
+      wakeToastId = toast.info(
+        "Server is waking up, this can take a minute on first visit…",
+        0
+      );
+    }, 5000);
+
     try {
       const response = await fetch(`${api_url}/user/verify`, {
         method: "POST",
@@ -49,27 +58,25 @@ const Signin = () => {
       const data = await response.json().catch(() => null);
 
       if (!response.ok) {
-        setMessage({
-          type: "error",
-          text: data?.error || data?.message || "Sign in failed. Try again.",
-        });
-        setLoading(false);
+        toast.error(data?.error || data?.message || "Sign in failed. Try again.");
         return;
       }
 
       const token = data?.data?.token;
       if (!token) {
-        setMessage({ type: "error", text: "Unexpected response from the server. Try again." });
-        setLoading(false);
+        toast.error("Unexpected response from the server. Try again.");
         return;
       }
 
       sessionStorage.setItem("token", token);
-      setMessage({ type: "success", text: "Signed in successfully. Redirecting…" });
-      setTimeout(() => navigate("/dashboard"), 1000);
+      toast.success("Signed in successfully.");
+      navigate("/dashboard"); // toast lives at app root, so it persists across pages
     } catch (err) {
       console.error(err);
-      setMessage({ type: "error", text: "Can't reach the server. Check your connection and try again." });
+      toast.error("Can't reach the server. Check your connection and try again.");
+    } finally {
+      clearTimeout(wakeTimer);
+      if (wakeToastId) toast.dismiss(wakeToastId);
       setLoading(false);
     }
   };
@@ -93,20 +100,6 @@ const Signin = () => {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-3">
-          {message && (
-            <div
-              role={message.type === "error" ? "alert" : "status"}
-              className={
-                "text-xs rounded-lg px-3 py-2 border " +
-                (message.type === "error"
-                  ? "text-red-700 bg-red-50 border-red-200 dark:text-red-300 dark:bg-red-950/40 dark:border-red-900"
-                  : "text-green-700 bg-green-50 border-green-200 dark:text-green-300 dark:bg-green-950/40 dark:border-green-900")
-              }
-            >
-              {message.text}
-            </div>
-          )}
-
           <div>
             <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1.5 tracking-wide">Email</label>
             <input

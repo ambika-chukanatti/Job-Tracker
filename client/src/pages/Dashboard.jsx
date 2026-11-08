@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
-import { JobRow, EditJobModal, Alert } from "../components";
+import React, { useEffect, useRef, useState } from "react";
+import { JobRow, EditJobModal } from "../components";
 import { useSearchParams } from "react-router-dom";
 import { ArrowUpDown, ArrowDownUp } from "lucide-react";
+import { useToast } from "../components/ToastContext"; // adjust path if needed
 
 const api_url = "https://job-tracker-ya9s.onrender.com/api";
 
@@ -32,8 +33,19 @@ const Dashboard = () => {
   const [isEditJob, setIsEditJob] = useState(true);
   const [jobs, setJobs] = useState([]);
   const [companies, setCompanies] = useState([]);
-  const [error, setError] = useState("");
   const [ji, setJi] = useState(null);
+  const toast = useToast();
+
+  // Shows an error toast, replacing the previous error toast from this page.
+  // This stops toasts from stacking up (e.g. typing in search while offline).
+  const lastErrorToast = useRef(null);
+  const showError = (message) => {
+    if (lastErrorToast.current) toast.dismiss(lastErrorToast.current);
+    lastErrorToast.current = toast.error(message);
+  };
+
+  // Used to ignore responses from outdated searches/filters
+  const latestJobsRequest = useRef(0);
 
   const search = searchParams.get("search") || "";
   const sortBy = searchParams.get("sortBy") || "";
@@ -41,6 +53,7 @@ const Dashboard = () => {
   const order = searchParams.get("order") || "asc";
 
   const getJobs = async (filter = "All", search = "", sortBy = "", order = "asc") => {
+    const requestId = ++latestJobsRequest.current;
     const query = new URLSearchParams({ filter, search, sortBy, order }).toString();
     try {
       const response = await fetch(`${api_url}/job?${query}`, {
@@ -48,14 +61,15 @@ const Dashboard = () => {
         headers: getAuthHeader()
       });
       const data = await response.json();
+      if (requestId !== latestJobsRequest.current) return; // a newer request replaced this one
       if (!response.ok) {
-        setError(data.error || "Failed to load jobs.");
+        showError(data.error || "Failed to load jobs.");
         return;
       }
-      setError("");
       setJobs(data);
     } catch (err) {
-      setError(NETWORK_ERROR);
+      if (requestId !== latestJobsRequest.current) return;
+      showError(NETWORK_ERROR);
     }
   };
 
@@ -67,12 +81,12 @@ const Dashboard = () => {
       });
       const data = await response.json();
       if (!response.ok) {
-        setError(data.error || "Failed to load companies.");
+        showError(data.error || "Failed to load companies.");
         return;
       }
       setCompanies(data);
     } catch (err) {
-      setError(NETWORK_ERROR);
+      showError(NETWORK_ERROR);
     }
   };
 
@@ -101,7 +115,6 @@ const Dashboard = () => {
   };
 
   const handleEdit = (job, ji) => {
-    setError("");
     setJi(ji);
     setSelectedJob(job);
     setIsEditJob(true);
@@ -109,7 +122,6 @@ const Dashboard = () => {
   };
 
   const handleAddNewJob = () => {
-    setError("");
     setIsEditJob(false);
     setEditModalOpen(true);
   };
@@ -117,7 +129,6 @@ const Dashboard = () => {
   // The modal awaits this function. It closes the modal only on success,
   // so a failed save keeps the user's input.
   const handleSave = async (formData, id) => {
-    setError("");
     const url = isEditJob ? `${api_url}/job/${id}` : `${api_url}/job`;
 
     // Each field is sent separately so the backend can read it from req.body
@@ -139,7 +150,7 @@ const Dashboard = () => {
       });
       const data = await response.json();
       if (!response.ok) {
-        setError(data.error || "Failed to save job.");
+        showError(data.error || "Failed to save job.");
         return;
       }
       if (isEditJob) {
@@ -149,13 +160,12 @@ const Dashboard = () => {
       }
       setEditModalOpen(false);
     } catch (err) {
-      setError(NETWORK_ERROR);
+      showError(NETWORK_ERROR);
     }
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this job?")) return;
-    setError("");
     try {
       const response = await fetch(`${api_url}/job/${id}`, {
         method: "DELETE",
@@ -163,24 +173,17 @@ const Dashboard = () => {
       });
       const data = await response.json();
       if (!response.ok) {
-        setError(data.error || "Failed to delete job.");
+        showError(data.error || "Failed to delete job.");
         return;
       }
       setJobs((prev) => prev.filter((j) => j.id !== id));
     } catch (err) {
-      setError(NETWORK_ERROR);
+      showError(NETWORK_ERROR);
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 px-8 py-8">
-
-      {/* Error alert: fixed at the top so it stays visible even while the modal is open */}
-      {error && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] w-full max-w-md px-4">
-          <Alert onClose={() => setError("")}>{error}</Alert>
-        </div>
-      )}
 
       {/* Status Cards */}
       <div className="grid grid-cols-8 gap-3 mb-8">

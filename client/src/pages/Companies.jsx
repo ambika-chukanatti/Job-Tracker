@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { CompanyCard, CompanyDetailsModal, CompanyEditModal, Alert } from "../components";
+import { CompanyCard, CompanyDetailsModal, CompanyEditModal } from "../components";
+import { useToast } from "../components/ToastContext"; // adjust path if needed
 
 const api_url = "https://job-tracker-ya9s.onrender.com/api";
 
@@ -18,7 +19,7 @@ const Companies = () => {
   const [companies, setCompanies] = useState([]);
   const [ci, setCi] = useState(null);
   const [isEdit, setIsEdit] = useState(false);
-  const [error, setError] = useState("");
+  const toast = useToast();
 
   const getCompanies = async () => {
     try {
@@ -28,12 +29,12 @@ const Companies = () => {
       });
       const data = await response.json();
       if (!response.ok) {
-        setError(data.error || "Failed to load companies.");
+        toast.error(data.error || "Failed to load companies.");
         return;
       }
       setCompanies(data);
     } catch (err) {
-      setError(NETWORK_ERROR);
+      toast.error(NETWORK_ERROR);
     }
   };
 
@@ -42,7 +43,6 @@ const Companies = () => {
   }, []);
 
   const handleSave = async (formData, id) => {
-    setError("");
     const url = isEdit ? `${api_url}/company/${id}` : `${api_url}/company`;
     try {
       const response = await fetch(url, {
@@ -52,7 +52,7 @@ const Companies = () => {
       });
       const data = await response.json();
       if (!response.ok) {
-        setError(data.error || "Failed to save company.");
+        toast.error(data.error || "Failed to save company.");
         return;
       }
       if (isEdit) {
@@ -64,13 +64,12 @@ const Companies = () => {
       setIsDetailsModalOpen(false);
       setIsEditModalOpen(false);
     } catch (err) {
-      setError(NETWORK_ERROR);
+      toast.error(NETWORK_ERROR);
     }
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this company?")) return;
-    setError("");
     try {
       const response = await fetch(`${api_url}/company/${id}`, {
         method: "DELETE",
@@ -78,13 +77,13 @@ const Companies = () => {
       });
       const data = await response.json();
       if (!response.ok) {
-        setError(data.error || "Failed to delete company.");
+        toast.error(data.error || "Failed to delete company.");
         return;
       }
       setCompanies((prev) => prev.filter((c) => c.id !== id));
       setIsDetailsModalOpen(false);
     } catch (err) {
-      setError(NETWORK_ERROR);
+      toast.error(NETWORK_ERROR);
     }
   };
 
@@ -95,13 +94,6 @@ const Companies = () => {
   return (
     <div className="min-h-screen bg-gray-50 px-8 py-8">
 
-      {/* Error alert */}
-      {error && (
-        <div className="mb-4">
-          <Alert onClose={() => setError("")}>{error}</Alert>
-        </div>
-      )}
-
       {/* Page header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -110,7 +102,6 @@ const Companies = () => {
         </div>
         <button
           onClick={() => {
-            setError("");
             setIsEdit(false);
             setIsEditModalOpen(true);
           }}
@@ -149,7 +140,6 @@ const Companies = () => {
               key={company.id}
               company={company}
               onOpen={() => {
-                setError("");
                 setCi(i);
                 setIsEdit(true);
                 setSelectedCompany(company);

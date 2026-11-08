@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Bar, Pie } from "react-chartjs-2";
 import "chart.js/auto";
-import Alert from "../components/Alert";
+import { useToast } from "../components/ToastContext"; // adjust path if needed
 
 const api_url = "https://job-tracker-ya9s.onrender.com/api";
 
@@ -68,7 +68,7 @@ const Statistics = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [barValues, setBarValues] = useState(null);
   const [pieValues, setPieValues] = useState(null);
-  const [error, setError] = useState("");
+  const toast = useToast();
   const isDark = useDarkMode(rootRef);
   const theme = isDark ? chartThemes.dark : chartThemes.light;
 
@@ -85,27 +85,38 @@ const Statistics = () => {
     setSearchParams(newParams);
   };
 
-  // type is "bar" or "pie"; returns the numbers, or null if there's nothing to show
+  // type is "bar" or "pie"; returns { values, error }
+  // values is null when there's nothing to show
   const fetchChart = async (type) => {
     const query = new URLSearchParams({ picker, filter }).toString();
     try {
       const response = await fetch(`${api_url}/chart/${type}?${query}`, { headers: getAuthHeader() });
       const data = await response.json();
       if (!response.ok) {
-        setError(data.error || `Failed to load the ${type} chart.`);
-        return null;
+        return { values: null, error: data.error || `Failed to load the ${type} chart.` };
       }
-      return Array.isArray(data) && data.length ? data : null;
+      return { values: Array.isArray(data) && data.length ? data : null, error: null };
     } catch (err) {
-      setError("Can't reach the server. Check your connection and try again.");
-      return null;
+      return { values: null, error: "Can't reach the server. Check your connection and try again." };
     }
   };
 
   useEffect(() => {
-    setError("");
-    fetchChart("bar").then(setBarValues);
-    fetchChart("pie").then(setPieValues);
+    let cancelled = false;
+
+    Promise.all([fetchChart("bar"), fetchChart("pie")]).then(([bar, pie]) => {
+      if (cancelled) return; // ignore results from an outdated filter
+      setBarValues(bar.values);
+      setPieValues(pie.values);
+
+      // One toast at most, even if both requests fail
+      const err = bar.error || pie.error;
+      if (err) toast.error(err);
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [picker, filter]);
 
   let labels;
@@ -162,12 +173,6 @@ const Statistics = () => {
 
   return (
     <div ref={rootRef} className="min-h-screen bg-gray-50 dark:bg-gray-950 px-8 py-8 transition-colors duration-200">
-
-      {error && (
-        <div className="mb-4">
-          <Alert onClose={() => setError("")}>{error}</Alert>
-        </div>
-      )}
 
       {/* Page header + controls */}
       <div className="flex items-center justify-between mb-6">

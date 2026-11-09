@@ -8,7 +8,7 @@ import { getTargetByUser, updateTarget } from "../controllers/targets.js";
 import { getUser, createUser, verifyUser, deleteUser, updateUser } from "../controllers/users.js";
 import { getPieChartData, getBarChartData } from '../controllers/statistics.js';
 import { upload } from "../utils/upload.js";
-import { getNotifications, markRead, markAllRead, dismissNotification, sendFollowUpEmail } from "../controllers/notificationController.js";
+import { getNotifications, markFollowUpDone } from "../controllers/notification.js";
 
 
 router.get("/user", auth, getUser);
@@ -35,10 +35,7 @@ router.put("/target", auth, updateTarget);
 router.get("/chart/bar", auth, getBarChartData);
 router.get("/chart/pie", auth, getPieChartData);
 
-router.get("/notification", getNotifications);
-router.patch("/notification/read-all", markAllRead);
-router.patch("/notification/:id/read", markRead);
-router.post("/notification/:id/follow-up-email", sendFollowUpEmail);
-router.delete("/notification/:id", dismissNotification);
+router.get("/notification", auth, getNotifications);
+router.patch("/notification/:id/done", auth, markFollowUpDone);
 
 export default router;

@@ -12,7 +12,7 @@ const corsOptions = {
   origin: [
     'https://job-tracker-gilt.vercel.app'
   ],
-  methods: ['GET', 'POST', 'DELETE', 'PUT', 'OPTIONS'],
+  methods: ['GET', 'POST', 'DELETE', 'PUT', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
 };

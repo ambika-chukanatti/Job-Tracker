@@ -16,7 +16,7 @@ const App = () => {
           element={
             <>
               <Header />
-              <main className="relative flex flex-col justify-start w-full bg-[#f9fafe] min-h-[calc(100vh-73px)]">
+              <main className="relative flex flex-col justify-start w-full bg-[#f9fafe] dark:bg-gray-950 min-h-[calc(100vh-73px)]">
                 <Routes>
                   <Route path="/dashboard" element={<Dashboard location={location}/>} />
                   <Route path="/job/:id" element={<JobDetails location={location}/>} />

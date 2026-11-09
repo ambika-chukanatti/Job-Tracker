@@ -17,22 +17,22 @@ const getResumeUrl = (resume) =>
 
 const statusSteps = ["Bookmarked", "Applying", "Applied", "Interviewing", "Negotiating", "Accepted", "Closed"];
 
-// Light mode keeps the soft pastel look. Dark mode uses a translucent tint of the
-// same color with a lighter text, so every status stays vivid on a dark background.
+// Light mode keeps the soft pastel look. Dark mode uses a stronger tint of the
+// same color with a light text, so every status stays vivid on a dark background.
 const statusColors = {
-  Bookmarked:    "bg-gray-100 text-gray-600 dark:bg-gray-500/20 dark:text-gray-300",
-  Applied:       "bg-blue-50 text-blue-600 dark:bg-blue-500/20 dark:text-blue-300",
-  "No Response": "bg-yellow-50 text-yellow-600 dark:bg-yellow-500/20 dark:text-yellow-300",
-  "Not Selected":"bg-red-50 text-red-500 dark:bg-red-500/20 dark:text-red-300",
-  "I Withdrew":  "bg-orange-50 text-orange-500 dark:bg-orange-500/20 dark:text-orange-300",
-  Interviewing:  "bg-purple-50 text-purple-600 dark:bg-purple-500/20 dark:text-purple-300",
-  Negotiating:   "bg-teal-50 text-teal-600 dark:bg-teal-500/20 dark:text-teal-300",
-  Accepted:      "bg-green-50 text-green-600 dark:bg-green-500/20 dark:text-green-300",
-  Closed:        "bg-gray-100 text-gray-500 dark:bg-gray-500/20 dark:text-gray-400",
+  Bookmarked:    "bg-gray-100 text-gray-600 dark:bg-gray-400/25 dark:text-gray-200",
+  Applied:       "bg-blue-50 text-blue-600 dark:bg-blue-500/25 dark:text-blue-300",
+  "No Response": "bg-yellow-50 text-yellow-600 dark:bg-yellow-500/25 dark:text-yellow-300",
+  "Not Selected":"bg-red-50 text-red-500 dark:bg-red-500/25 dark:text-red-300",
+  "I Withdrew":  "bg-orange-50 text-orange-500 dark:bg-orange-500/25 dark:text-orange-300",
+  Interviewing:  "bg-purple-50 text-purple-600 dark:bg-purple-500/25 dark:text-purple-300",
+  Negotiating:   "bg-teal-50 text-teal-600 dark:bg-teal-500/25 dark:text-teal-300",
+  Accepted:      "bg-green-50 text-green-600 dark:bg-green-500/25 dark:text-green-300",
+  Closed:        "bg-gray-100 text-gray-500 dark:bg-gray-400/25 dark:text-gray-300",
 };
 
 const cardClass =
-  "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl transition-colors duration-200";
+  "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl transition-colors duration-200";
 
 const JobDetails = () => {
   const { id } = useParams();
@@ -90,7 +90,7 @@ const JobDetails = () => {
       {/* Back */}
       <button
         onClick={() => navigate(-1)}
-        className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-200 mb-6 transition-colors cursor-pointer"
+        className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-100 mb-6 transition-colors cursor-pointer"
       >
         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
@@ -100,7 +100,7 @@ const JobDetails = () => {
 
       {/* Loading */}
       {loading && (
-        <div className="text-center py-24 text-sm text-gray-300 dark:text-gray-600">
+        <div className="text-center py-24 text-sm text-gray-400 dark:text-gray-500">
           Loading job… the server may take a few seconds to wake up.
         </div>
       )}
@@ -108,10 +108,10 @@ const JobDetails = () => {
       {/* Load failed: the error itself shows as a toast, this is just the empty state */}
       {!loading && !job && (
         <div className="max-w-md mx-auto py-16 text-center space-y-4">
-          <p className="text-sm text-gray-400 dark:text-gray-500">This job couldn't be loaded.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">This job couldn't be loaded.</p>
           <button
             onClick={getJob}
-            className="text-sm text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-2 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+            className="text-sm text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-2 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
           >
             Try again
           </button>
@@ -125,17 +125,17 @@ const JobDetails = () => {
           <div className={`${cardClass} px-6 py-5 mb-5`}>
             <div className="flex items-start justify-between">
               <div>
-                <h1 className="text-base font-medium text-gray-900 dark:text-gray-100">{job.job_title || "—"}</h1>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{job.company_name || "—"}</p>
+                <h1 className="text-base font-medium text-gray-900 dark:text-white">{job.job_title || "—"}</h1>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{job.company_name || "—"}</p>
               </div>
               {job.status && (
-                <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[job.status] || "bg-gray-100 text-gray-500 dark:bg-gray-500/20 dark:text-gray-400"}`}>
+                <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[job.status] || "bg-gray-100 text-gray-500 dark:bg-gray-400/25 dark:text-gray-300"}`}>
                   {job.status}
                 </span>
               )}
             </div>
 
-            {/* Progress bar */}
+            {/* Progress bar: a bright indigo fill so it stands out in both modes */}
             <div className="mt-5">
               <div className="flex items-center gap-0">
                 {statusSteps.map((step, index) => {
@@ -145,10 +145,10 @@ const JobDetails = () => {
                   return (
                     <div key={step} className="flex-1 flex flex-col items-center gap-1.5">
                       <div
-                        className={`h-1 w-full ${isActive ? "bg-gray-800 dark:bg-indigo-400" : "bg-gray-100 dark:bg-gray-800"}
+                        className={`h-1.5 w-full ${isActive ? "bg-indigo-500 dark:bg-indigo-400" : "bg-gray-200 dark:bg-gray-700"}
                           ${isFirst ? "rounded-l-full" : ""} ${isLast ? "rounded-r-full" : ""}`}
                       />
-                      <span className={`text-xs ${isActive ? "text-gray-700 dark:text-gray-100 font-medium" : "text-gray-300 dark:text-gray-600"}`}>
+                      <span className={`text-xs ${isActive ? "text-gray-800 dark:text-white font-medium" : "text-gray-400 dark:text-gray-500"}`}>
                         {step}
                       </span>
                     </div>
@@ -158,11 +158,11 @@ const JobDetails = () => {
             </div>
 
             {/* Meta fields */}
-            <div className="grid grid-cols-4 gap-2 mt-5 pt-5 border-t border-gray-100 dark:border-gray-800">
+            <div className="grid grid-cols-4 gap-2 mt-5 pt-5 border-t border-gray-100 dark:border-gray-700">
               {metaFields.map(({ label, value }) => (
                 <div key={label} className="text-center">
-                  <p className="text-xs text-gray-400 dark:text-gray-500">{label}</p>
-                  <p className="text-sm text-gray-700 dark:text-gray-200 mt-0.5">{value || "—"}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
+                  <p className="text-sm text-gray-800 dark:text-gray-100 mt-0.5">{value || "—"}</p>
                 </div>
               ))}
             </div>
@@ -170,15 +170,15 @@ const JobDetails = () => {
 
           {/* Tabs */}
           <div className={`${cardClass} overflow-hidden`}>
-            <div className="flex border-b border-gray-100 dark:border-gray-800">
+            <div className="flex border-b border-gray-100 dark:border-gray-700">
               {tabs.map((tab) => (
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
                   className={`flex-1 py-3 text-xs font-medium transition-colors cursor-pointer
                     ${activeTab === tab.key
-                      ? "text-gray-900 dark:text-gray-100 border-b-2 border-gray-900 dark:border-indigo-400 -mb-px"
-                      : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+                      ? "text-indigo-600 dark:text-indigo-300 border-b-2 border-indigo-500 dark:border-indigo-400 -mb-px"
+                      : "text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-100"
                     }`}
                 >
                   {tab.name}
@@ -196,14 +196,14 @@ const JobDetails = () => {
                     { label: "Job URL",  value: job.job_url, isLink: true },
                   ].map(({ label, value, isLink }) => (
                     <div key={label} className="text-center">
-                      <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">{label}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{label}</p>
                       {isLink && value ? (
                         <a href={value} target="_blank" rel="noopener noreferrer"
-                          className="text-sm text-blue-500 dark:text-blue-400 hover:underline">
+                          className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
                           View posting
                         </a>
                       ) : (
-                        <p className="text-sm text-gray-700 dark:text-gray-200">{value || "—"}</p>
+                        <p className="text-sm text-gray-800 dark:text-gray-100">{value || "—"}</p>
                       )}
                     </div>
                   ))}
@@ -211,13 +211,13 @@ const JobDetails = () => {
               )}
 
               {activeTab === "description" && (
-                <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+                <p className="text-sm text-gray-700 dark:text-gray-200 leading-relaxed whitespace-pre-wrap">
                   {job.job_description || "No description available."}
                 </p>
               )}
 
               {activeTab === "notes" && (
-                <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+                <p className="text-sm text-gray-700 dark:text-gray-200 leading-relaxed whitespace-pre-wrap">
                   {job.notes || "No notes available."}
                 </p>
               )}
@@ -226,14 +226,14 @@ const JobDetails = () => {
                 <div className="flex justify-center items-center h-32">
                   {job.resume ? (
                     <a href={getResumeUrl(job.resume)} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                      <svg className="w-4 h-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                      className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                      <svg className="w-4 h-4 text-gray-400 dark:text-gray-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                       </svg>
                       View resume
                     </a>
                   ) : (
-                    <p className="text-sm text-gray-300 dark:text-gray-600">No resume uploaded.</p>
+                    <p className="text-sm text-gray-400 dark:text-gray-500">No resume uploaded.</p>
                   )}
                 </div>
               )}

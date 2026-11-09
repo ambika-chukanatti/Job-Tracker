@@ -192,8 +192,7 @@ const Dashboard = () => {
           return (
             <div
               key={status}
-              onClick={() => updateFilters("filter", filter === status ? "All" : status)}
-              className={`${bg} border border-gray-200 rounded-xl p-3 text-center cursor-pointer transition-all hover:shadow-sm ${filter === status ? "ring-1 ring-gray-400" : ""}`}
+              className={`${bg} border border-gray-200 rounded-xl p-3 text-center`}
             >
               <p className={`text-2xl font-medium ${text}`}>{statusCounts[status] || 0}</p>
               <p className="text-xs text-gray-400 mt-0.5 leading-tight">{status}</p>

@@ -6,5 +6,6 @@ import Signup from "./Signup";
 import Companies from "./Companies";
 import Error from "./Error"
 import Statistics from "./Statistics";
+import Notifications from "./Notifications";
 
-export { Dashboard, JobDetails, Profile, Signin, Signup, Companies, Error, Statistics }
+export { Dashboard, JobDetails, Profile, Signin, Signup, Companies, Error, Statistics, Notifications }

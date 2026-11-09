@@ -8,7 +8,7 @@ import { getTargetByUser, updateTarget } from "../controllers/targets.js";
 import { getUser, createUser, verifyUser, deleteUser, updateUser } from "../controllers/users.js";
 import { getPieChartData, getBarChartData } from '../controllers/statistics.js';
 import { upload } from "../utils/upload.js";
-import { getNotifications, markFollowUpDone } from "../controllers/notification.js";
+import { getNotifications, markFollowUpDone } from "../controllers/notifications.js";
 
 
 router.get("/user", auth, getUser);

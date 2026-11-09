@@ -16,16 +16,22 @@ const Header = () => {
 
       <nav className="flex items-center gap-1">
         <Link
+          to="/companies"
+          className="text-xs text-gray-500 hover:text-gray-900 hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors"
+        >
+          Companies
+        </Link>
+        <Link
           to="/statistics"
           className="text-xs text-gray-500 hover:text-gray-900 hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors"
         >
           Statistics
         </Link>
         <Link
-          to="/companies"
+          to="/notifications"
           className="text-xs text-gray-500 hover:text-gray-900 hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors"
         >
-          Companies
+          Notifications
         </Link>
         <Link
           to="/profile"

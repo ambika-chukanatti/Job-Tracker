@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
 
-import { Dashboard, JobDetails, Profile, Signin, Signup, Companies, Error, Statistics } from './pages';
+import { Dashboard, JobDetails, Profile, Signin, Signup, Companies, Error, Statistics, Notifications } from './pages';
 import { Header } from './components';
 
 const App = () => {
@@ -23,6 +23,7 @@ const App = () => {
                   <Route path="/profile" element={<Profile location={location}/>} />
                   <Route path="/companies" element={<Companies location={location}/>} />
                   <Route path="/statistics" element={<Statistics location={location}/>} />
+                  <Route path="/notifications" element={<Notifications location={location}/>} />
                   <Route path="*" element={<Error />} />
                 </Routes>
               </main>

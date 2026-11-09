@@ -37,7 +37,7 @@ const Notifications = () => {
         toast.error(data.error || "Failed to load notifications.");
         return;
       }
-      setNotifications(data.notifications);
+      setNotifications(data.notifications.filter((n) => n.minutes_left > 0));
     } catch (err) {
       setFailed(true);
       toast.error(NETWORK_ERROR);

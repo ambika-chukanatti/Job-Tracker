@@ -9,9 +9,9 @@ const DEFAULT_TIMES = { follow_up: "09:00", deadline: "23:59" };
 const FINISHED_STATUSES = ["Not Selected", "I Withdrew", "Accepted"];
 
 const STAGES = [
-  { key: "30_min", minutes: 30, when: "30 minutes", subject: "due in 30 minutes" },
-  { key: "6_hours", minutes: 6 * 60, when: "about 6 hours", subject: "due in about 6 hours" },
-  { key: "1_day", minutes: 24 * 60, when: "about 1 day", subject: "due in about 1 day" },
+  { key: "30_min", minutes: 30, subject: "due in 30 minutes" },
+  { key: "6_hours", minutes: 6 * 60, subject: "due in about 6 hours" },
+  { key: "1_day", minutes: 24 * 60, subject: "due in about 1 day" },
 ];
 
 const EMAIL_INTERVAL_MINUTES = 1;
@@ -42,10 +42,19 @@ const getStage = (minutesLeft) => {
 const getEmailStage = (minutesLeft) =>
   STAGES.find((s) => minutesLeft > s.minutes - EMAIL_INTERVAL_MINUTES && minutesLeft <= s.minutes) || null;
 
-const buildMessage = (type, role, stage) =>
+const formatRemaining = (minutes) => {
+  if (minutes >= 24 * 60) return "1 day";
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? "" : "s"}`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  const hours = `${h} hour${h === 1 ? "" : "s"}`;
+  return m ? `${hours} ${m} minute${m === 1 ? "" : "s"}` : hours;
+};
+
+const buildMessage = (type, role, minutesLeft) =>
   type === "follow_up"
-    ? `Your follow-up for ${role} is due in ${stage.when}.`
-    : `The deadline for ${role} is in ${stage.when}.`;
+    ? `Your follow-up for ${role} is due in ${formatRemaining(minutesLeft)}.`
+    : `The deadline for ${role} is in ${formatRemaining(minutesLeft)}.`;
 
 const loadReminders = async (userId = null) => {
   const now = nowInAppTz();
@@ -78,7 +87,8 @@ const loadReminders = async (userId = null) => {
       if (!date) continue;
 
       const time = asTimeString(job[kind.timeField]) || DEFAULT_TIMES[type];
-      const minutesLeft = Math.ceil((new Date(`${date}T${time}:00Z`) - now) / 60000);
+      const deadlineMs = new Date(`${date}T${time}:00Z`).getTime();
+      const minutesLeft = Math.ceil((deadlineMs - now) / 60000);
       const stage = getStage(minutesLeft);
       if (!stage) continue;
 
@@ -89,12 +99,13 @@ const loadReminders = async (userId = null) => {
         time,
         minutesLeft,
         stage,
-        message: buildMessage(type, `${job.job_title} at ${job.company_name}`, stage),
+        triggeredAt: deadlineMs - stage.minutes * 60000,
+        message: buildMessage(type, `${job.job_title} at ${job.company_name}`, minutesLeft),
       });
     }
   }
 
-  return reminders.sort((a, b) => a.minutesLeft - b.minutesLeft);
+  return reminders.sort((a, b) => b.triggeredAt - a.triggeredAt);
 };
 
 export const getNotifications = async (req, res) => {

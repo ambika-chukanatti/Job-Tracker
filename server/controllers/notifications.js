@@ -23,7 +23,7 @@ const STAGES = [
 ];
 
 // How often the email check runs. Must match the cron expression at the bottom.
-const EMAIL_INTERVAL_MINUTES = 5;
+const EMAIL_INTERVAL_MINUTES = 1;
 
 // The two things a job can be reminded about
 const KINDS = {
@@ -56,7 +56,7 @@ const getStage = (minutesLeft) => {
 };
 
 // Stage whose exact moment falls inside the last email interval (used for emails only).
-// e.g. with a 5 min interval, the "30_min" email goes out when 26-30 minutes are left.
+// With a 1 min interval, the "30_min" email goes out when exactly 30 minutes are left.
 const getEmailStage = (minutesLeft) =>
   STAGES.find((s) => minutesLeft > s.minutes - EMAIL_INTERVAL_MINUTES && minutesLeft <= s.minutes) || null;
 
@@ -208,7 +208,7 @@ const sendEmail = async ({ to, subject, text }) => {
   if (!res.ok) throw new Error(`Email failed (${res.status}): ${await res.text()}`);
 };
 
-// Runs every EMAIL_INTERVAL_MINUTES. Stateless: a reminder is emailed only when its
+// Runs every EMAIL_INTERVAL_MINUTES (every minute, so emails land exactly on time). Stateless: a reminder is emailed only when its
 // "1 day / 6 hours / 30 min before" moment falls inside the last interval, so
 // nothing needs to be remembered between runs.
 export const runEmailCheck = async () => {

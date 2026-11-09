@@ -18,14 +18,16 @@ const formatDate = (dateStr) =>
     year: "numeric",
   });
 
+const TYPE_LABELS = { follow_up: "Follow-up", deadline: "Deadline" };
+
 const Notifications = () => {
   const toast = useToast();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
 
-  const loadNotifications = async () => {
-    setLoading(true);
+  const loadNotifications = async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     setFailed(false);
     try {
       const response = await fetch(`${api_url}/notification`, { headers: getAuthHeader() });
@@ -46,24 +48,10 @@ const Notifications = () => {
 
   useEffect(() => {
     loadNotifications();
+    // Refresh every minute so reminders appear on time and disappear once the time has passed
+    const timer = setInterval(() => loadNotifications(false), 60000);
+    return () => clearInterval(timer);
   }, []);
-
-  const markDone = async (jobId) => {
-    try {
-      const response = await fetch(`${api_url}/notification/${jobId}/done`, {
-        method: "PATCH",
-        headers: getAuthHeader(),
-      });
-      const data = await response.json().catch(() => null);
-      if (!response.ok) {
-        toast.error(data?.error || "Failed to update the follow-up.");
-        return;
-      }
-      setNotifications((prev) => prev.filter((n) => n.job_id !== jobId));
-    } catch (err) {
-      toast.error(NETWORK_ERROR);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 px-8 py-8 transition-colors duration-200">
@@ -74,8 +62,8 @@ const Notifications = () => {
           <h1 className="text-base font-medium text-gray-900 dark:text-white">Notifications</h1>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
             {notifications.length > 0
-              ? `${notifications.length} follow-up${notifications.length === 1 ? "" : "s"} due`
-              : "Follow-ups that need your attention"}
+              ? `${notifications.length} upcoming reminder${notifications.length === 1 ? "" : "s"}`
+              : "Follow-ups and deadlines coming up"}
           </p>
         </div>
 
@@ -88,7 +76,7 @@ const Notifications = () => {
         {!loading && failed && (
           <div className="text-center py-24">
             <button
-              onClick={loadNotifications}
+              onClick={() => loadNotifications()}
               className="text-sm text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-2 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
             >
               Try again
@@ -98,7 +86,7 @@ const Notifications = () => {
 
         {!loading && !failed && notifications.length === 0 && (
           <div className="text-center py-24 text-sm text-gray-400 dark:text-gray-500">
-            You're all caught up. Set a follow-up date on a job and it will show up here on that day.
+            You're all caught up. A follow-up or deadline shows up here starting a day before it's due.
           </div>
         )}
 
@@ -106,13 +94,8 @@ const Notifications = () => {
         <div className="space-y-3">
           {notifications.map((n) => (
             <div
-              key={n.job_id}
-              className={
-                "bg-white dark:bg-gray-900 border rounded-xl px-5 py-4 transition-colors duration-200 " +
-                (n.days_overdue > 0
-                  ? "border-red-300 dark:border-red-500/60"
-                  : "border-indigo-200 dark:border-indigo-500/50")
-              }
+              key={`${n.job_id}-${n.type}`}
+              className="bg-white dark:bg-gray-900 border border-indigo-200 dark:border-indigo-500/50 rounded-xl px-5 py-4 transition-colors duration-200"
             >
               <div className="flex items-start gap-3">
 
@@ -127,28 +110,22 @@ const Notifications = () => {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-500/25 dark:text-indigo-300">
-                      Follow-up
+                      {TYPE_LABELS[n.type] || "Reminder"}
                     </span>
                     <span className="text-xs text-gray-500 dark:text-gray-400">
-                      Due {formatDate(n.follow_up)}{n.follow_up_time ? `, ${n.follow_up_time}` : ""}
+                      Due {formatDate(n.date)}{n.time ? `, ${n.time}` : ""}
                     </span>
                   </div>
 
                   <p className="text-sm text-gray-800 dark:text-gray-100">{n.message}</p>
 
-                  <div className="flex items-center gap-2 mt-3">
+                  <div className="mt-3">
                     <Link
                       to={`/job/${n.job_id}`}
-                      className="text-xs text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                      className="inline-block text-xs text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                     >
                       View job
                     </Link>
-                    <button
-                      onClick={() => markDone(n.job_id)}
-                      className="text-xs font-medium bg-gray-900 dark:bg-indigo-500 text-white rounded-lg px-3 py-1.5 hover:opacity-90 transition-opacity cursor-pointer"
-                    >
-                      Mark as done
-                    </button>
                   </div>
                 </div>
               </div>

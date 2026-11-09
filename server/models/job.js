@@ -52,8 +52,16 @@ const Job = sequelize.define('Job', {
     type: DataTypes.DATEONLY,
     allowNull: true,
   },
+  deadline_time: {
+  type: DataTypes.TIME,
+  allowNull: true
+  },
   follow_up: {
     type: DataTypes.DATEONLY,
+    allowNull: true
+  },
+  follow_up_time: {
+    type: DataTypes.TIME,
     allowNull: true
   },
   company_id: { 

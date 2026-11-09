@@ -80,8 +80,8 @@ const JobDetails = () => {
   const metaFields = [
     { label: "Bookmarked", value: job?.bookmarked  },
     { label: "Applied",    value: job?.date_applied },
-    { label: "Deadline",   value: job?.deadline    },
-    { label: "Follow-up",  value: job?.follow_up   },
+    { label: "Deadline",   value: job?.deadline ? `${job.deadline}${job.deadline_time ? " " + job.deadline_time.slice(0, 5) : ""}` : null },
+    { label: "Follow-up",  value: job?.follow_up ? `${job.follow_up}${job.follow_up_time ? " " + job.follow_up_time.slice(0, 5) : ""}` : null },
   ];
 
   return (

@@ -4,6 +4,8 @@ import sequelize from "../utils/database.js";
 
 // FormData sends everything as strings, so empty dates arrive as ""
 const toDate = (v) => (v === "" || v === "null" || v === undefined ? null : v);
+// Same idea for times ("17:30"): empty means "no time set"
+const toTime = (v) => (v === "" || v === "null" || v === undefined ? null : v);
 
 export const createJob = async (req, res) => {
   try {
@@ -11,7 +13,7 @@ export const createJob = async (req, res) => {
 
     const {
       company_id, job_title, job_url, company_name, location, salary,
-      job_description, status, notes, deadline, date_applied, follow_up,
+      job_description, status, notes, deadline, deadline_time, date_applied, follow_up, follow_up_time,
     } = req.body;
 
     const job = await Job.create({
@@ -27,8 +29,10 @@ export const createJob = async (req, res) => {
       notes,
       resume: req.file ? req.file.filename : null,
       deadline: toDate(deadline),
+      deadline_time: toTime(deadline_time),
       date_applied: toDate(date_applied),
       follow_up: toDate(follow_up),
+      follow_up_time: toTime(follow_up_time),
     });
 
     res.status(201).json({ message: "Job created successfully", job });
@@ -116,7 +120,7 @@ export const updateJob = async (req, res) => {
 
     const {
       id, company_id, job_title, job_url, company_name, location, salary,
-      job_description, status, notes, deadline, date_applied, follow_up,
+      job_description, status, notes, deadline, deadline_time, date_applied, follow_up, follow_up_time,
     } = req.body;
 
     // Only the owner can update a job
@@ -135,8 +139,10 @@ export const updateJob = async (req, res) => {
       status,
       notes,
       deadline: toDate(deadline),
+      deadline_time: toTime(deadline_time),
       date_applied: toDate(date_applied),
       follow_up: toDate(follow_up),
+      follow_up_time: toTime(follow_up_time),
     };
 
     if (company_id) updates.company_id = company_id;

@@ -18,17 +18,24 @@ const newJob = {
   notes: "",
   resume: "",
   deadline: null,
+  deadline_time: null,
   date_applied: null,
   follow_up: null,
+  follow_up_time: null,
   company_id: 0,
 };
 
-const dateFields = ["deadline", "date_applied", "follow_up"];
+// Empty values are sent as null so the database stores NULL instead of ""
+const nullableFields = ["deadline", "deadline_time", "date_applied", "follow_up", "follow_up_time"];
+
+// MySQL returns TIME as "HH:MM:SS"; <input type="time"> wants "HH:MM"
+const toTimeInput = (v) => (v ? String(v).slice(0, 5) : "");
 
 const inputClass =
   "w-full text-sm px-3 py-2 border rounded-lg focus:outline-none focus:ring-1 transition-colors duration-200 " +
   "bg-white text-gray-800 border-gray-200 placeholder-gray-300 focus:ring-gray-300 " +
-  "dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700 dark:placeholder-gray-500 dark:focus:ring-gray-500 dark:[color-scheme:dark]";
+  "dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700 dark:placeholder-gray-500 dark:focus:ring-gray-500 dark:[color-scheme:dark] " +
+  "disabled:opacity-50 disabled:cursor-not-allowed";
 
 const labelClass = "block text-xs text-gray-400 dark:text-gray-500 mb-1.5";
 
@@ -44,10 +51,16 @@ const EditJobModal = ({ ji, job, isOpen, onClose, onSave, companies, isEdit }) =
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
+    const next = {
       ...formData,
-      [name]: dateFields.includes(name) && value === "" ? null : value,
-    });
+      [name]: nullableFields.includes(name) && value === "" ? null : value,
+    };
+
+    // A time means nothing without a date, so clearing a date clears its time
+    if (name === "deadline" && value === "") next.deadline_time = null;
+    if (name === "follow_up" && value === "") next.follow_up_time = null;
+
+    setFormData(next);
   };
 
   const handleFileChange = (e) => {
@@ -212,21 +225,21 @@ const EditJobModal = ({ ji, job, isOpen, onClose, onSave, companies, isEdit }) =
           {/* Row 4: dates */}
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className={labelClass}>Deadline</label>
-              <input
-                type="date"
-                name="deadline"
-                value={formData.deadline || ""}
-                onChange={handleChange}
-                className={inputClass}
-              />
-            </div>
-            <div>
               <label className={labelClass}>Date applied</label>
               <input
                 type="date"
                 name="date_applied"
                 value={formData.date_applied || ""}
+                onChange={handleChange}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Deadline</label>
+              <input
+                type="date"
+                name="deadline"
+                value={formData.deadline || ""}
                 onChange={handleChange}
                 className={inputClass}
               />
@@ -238,6 +251,33 @@ const EditJobModal = ({ ji, job, isOpen, onClose, onSave, companies, isEdit }) =
                 name="follow_up"
                 value={formData.follow_up || ""}
                 onChange={handleChange}
+                className={inputClass}
+              />
+            </div>
+          </div>
+
+          {/* Row 5: times, aligned under their dates (optional; reminders use 23:59 / 09:00 if empty) */}
+          <div className="grid grid-cols-3 gap-4">
+            <div />
+            <div>
+              <label className={labelClass}>Deadline time</label>
+              <input
+                type="time"
+                name="deadline_time"
+                value={toTimeInput(formData.deadline_time)}
+                onChange={handleChange}
+                disabled={!formData.deadline}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Follow-up time</label>
+              <input
+                type="time"
+                name="follow_up_time"
+                value={toTimeInput(formData.follow_up_time)}
+                onChange={handleChange}
+                disabled={!formData.follow_up}
                 className={inputClass}
               />
             </div>

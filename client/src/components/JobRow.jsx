@@ -11,6 +11,12 @@ const statusColors = {
   Accepted:       "bg-green-50 text-green-600",
 };
 
+// "2026-11-12" + "14:30:00" -> "2026-11-12 14:30"
+const formatDateTime = (date, time) => {
+  if (!date) return "—";
+  return time ? `${date} ${String(time).slice(0, 5)}` : date;
+};
+
 const JobRow = ({ i, job, onEdit, onDelete }) => {
   const navigate = useNavigate();
 
@@ -29,9 +35,9 @@ const JobRow = ({ i, job, onEdit, onDelete }) => {
           {job.status}
         </span>
       </td>
-      <td className="px-4 py-3 text-sm text-gray-500">{job.deadline || "—"}</td>
+      <td className="px-4 py-3 text-sm text-gray-500">{formatDateTime(job.deadline, job.deadline_time)}</td>
       <td className="px-4 py-3 text-sm text-gray-500">{job.date_applied || "—"}</td>
-      <td className="px-4 py-3 text-sm text-gray-500">{job.follow_up || "—"}</td>
+      <td className="px-4 py-3 text-sm text-gray-500">{formatDateTime(job.follow_up, job.follow_up_time)}</td>
       <td className="px-4 py-3">
         <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
           <button
@@ -51,5 +57,4 @@ const JobRow = ({ i, job, onEdit, onDelete }) => {
     </tr>
   );
 };
-
 export default JobRow;
